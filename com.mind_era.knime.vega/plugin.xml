@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.0"?>
+<plugin>
+
+   <!-- This is an example for providing an own category 
+      <extension
+         point="org.knime.workbench.repository.categories">
+      <category
+            description="Category containing my nodes"
+            icon="icons/default.png"
+            level-id="myNodes"
+            name="My nodes"
+            path="/"/>
+   </extension>
+   -->
+   <!--
+   <extension
+         point="org.knime.product.splashExtension">
+      <splashExtension
+            icon="icons/default_48.png"
+            id="com.mind_era.knime.vega.batch.splashExtension"
+            tooltip="BatchVegaViewer">
+      </splashExtension>
+   </extension>
+   -->
+   
+   <extension
+         point="org.knime.workbench.repository.nodes">
+      <node
+            category-path="/"
+            factory-class="com.mind_era.knime.vega.batch.BatchVegaViewerNodeFactory"
+            id="com.mind_era.knime.vega.batch.BatchVegaViewerNodeFactory"/>
+   </extension>
+   <extension point="org.eclipse.core.runtime.preferences">
+      <initializer class="com.mind_era.knime.vega.batch.preferences.PreferenceInitializer">
+      </initializer>
+   </extension>
+   <extension point="org.eclipse.ui.preferencePages">
+      <page class="com.mind_era.knime.vega.batch.preferences.PreferencePage" id="com.mind_era.knime.vega.batch.preferences.PreferencePage" name="Vega Preferences"/>
+   </extension>
+   
+</plugin>

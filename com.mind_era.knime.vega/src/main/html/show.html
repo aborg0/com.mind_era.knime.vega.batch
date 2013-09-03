@@ -1,0 +1,22 @@
+<html>
+  <head>
+    <title>Vega Preview</title>
+    <!--script src="http://trifacta.github.com/vega/d3.v3.min.js"></script-->
+    <script src="../js/d3.v3.min.js"></script>
+    <!--script src="http://trifacta.github.com/vega/vega.js"></script-->
+    <script src="../js/vega.min.js"></script>
+    <!--script src="http://trifacta.github.com/vega/d3.geo.projection.min.js"></script-->
+  </head>
+  <body>
+    <div id="vis"></div>
+  </body>
+<script type="text/javascript">
+// parse a spec and create a visualization view
+function parse(spec) {
+  vg.parse.spec(spec, function(chart) { chart({el:"#vis"}).update(); });
+}
+//parse("file://C:/Users/Gábor/tmp/eclipse_knime_2.8.0_2013/workspace/com.mind_era.knime.vega/src/main/html/spec.json");
+parse("spec.json");
+//parse("http://trifacta.github.io/vega/data/jobs.json");
+</script>
+</html>
