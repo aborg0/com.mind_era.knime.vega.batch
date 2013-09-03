@@ -1,15 +1,15 @@
 Vega node for KNIME
 ===================
 
-Batch conversion using Vega[nttps://github.com/trifacta/vega] and Node.js for KNIME
+Batch conversion using [Vega](https://github.com/trifacta/vega) and Node.js for KNIME
 
 Installation
-============
+------------
 
 Currently only tested on Windows.
 
 How to setup Windows and KNIME for vega nodejs:
- - install the *32* bit nodejs (it also installs npm, adds to the PATH)
+ - install the _32_ bit nodejs (it also installs npm, adds to the PATH)
  - install Python 2.7, add to the PATH (most probably C:\Python27), also
 add PYTHONPATH (this might be optional?) I used Python 2.7.5.
  - extract GTK 32 bit bundle to C:\GTK add C:\GTK\bin to the PATH.
@@ -22,4 +22,4 @@ vega, although this might be optional, not familiar with npm.)
 paths in the preferences.
  - the SVG extension is required to create SVG images to KNIME.
 
-The following page might be more up-to-date: [https://github.com/benjamind/delarre.docpad/blob/master/src/documents/posts/installing-node-canvas-for-windows.html.md Installing node canvas for Windows]
+The following page might be more up-to-date: [Installing node canvas for Windows](https://github.com/benjamind/delarre.docpad/blob/master/src/documents/posts/installing-node-canvas-for-windows.html.md)
