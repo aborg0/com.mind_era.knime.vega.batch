@@ -55,6 +55,10 @@ import java.io.BufferedInputStream
 import java.io.FileInputStream
 import org.knime.base.data.xml.SvgCell
 import scala.util.control.NonFatal
+import java.util.regex.Pattern
+import com.mind_era.knime.util.SettingsModelPairs
+import java.util.Collections
+import org.knime.core.node.port.PortObjectSpec
 
 /**
  * Companion object for BatchVegaViewerNodeModel.
@@ -84,12 +88,12 @@ object BatchVegaViewerNodeModel {
   "data": [
     {
       "name": "table",
-      "url": "data.json"
+      "url": "$inputTable$"
     }
   ],
   "scales": [
-    {"name":"x", "type":"ordinal", "range":"width", "domain":{"data":"table", "field":"data.text"}},
-    {"name":"y", "range":"height", "nice":true, "domain":{"data":"table", "field":"data.alma"}}
+    {"name":"x", "type":"ordinal", "range":"width", "domain":{"data":"table", "field":"data.$nominal$"}},
+    {"name":"y", "range":"height", "nice":true, "domain":{"data":"table", "field":"data.$numeric$"}}
   ],
   "axes": [
     {"type":"x", "scale":"x"},
@@ -101,9 +105,9 @@ object BatchVegaViewerNodeModel {
       "from": {"data":"table"},
       "properties": {
         "enter": {
-          "x": {"scale":"x", "field":"data.text"},
+          "x": {"scale":"x", "field":"data.$nominal$"},
           "width": {"scale":"x", "band":true, "offset":-1},
-          "y": {"scale":"y", "field":"data.alma"},
+          "y": {"scale":"y", "field":"data.$numeric$"},
           "y2": {"scale":"y", "value":0}
         },
         "update": { "fill": {"value":"steelblue"} },
@@ -115,7 +119,7 @@ object BatchVegaViewerNodeModel {
 
   private[batch] final val CFGKEY_MAPPING = "column mapping"
 
-  private[batch] final val DEFAULT_MAPPING = ""
+  private[batch] final val DEFAULT_MAPPING: java.util.List[org.knime.core.util.Pair[StringCell, StringCell]] = new java.util.ArrayList
 
   private[batch] final val CFGKEY_FORMAT = "image format"
   private[batch] final val SVG = "SVG"
@@ -126,6 +130,17 @@ object BatchVegaViewerNodeModel {
   private[batch] final val DEFAULT_FORMAT = POSSIBLE_FORMATS(0)
 
   private[batch] final val VEGA_ERROR_PREFIX = "[Vega Err] "
+
+  //Helper methods to create the [SettingsModel]s
+
+  protected[batch] def createVegaSettings: SettingsModelString =
+    new SettingsModelString(CFGKEY_VEGA_SPEC, DEFAULT_VEGA_SPEC)
+
+  protected[batch] def createMappingSettings: SettingsModelPairs[StringCell, StringCell] =
+    new SettingsModelPairs(CFGKEY_MAPPING, StringCell.TYPE, StringCell.TYPE, DEFAULT_MAPPING, true, false)
+
+  protected[batch] def createFormatSettings: SettingsModelString =
+    new SettingsModelString(CFGKEY_FORMAT, DEFAULT_FORMAT)
 }
 
 /**
@@ -137,49 +152,24 @@ object BatchVegaViewerNodeModel {
 class BatchVegaViewerNodeModel extends NodeModel(Array[PortType](BufferedDataTable.TYPE_OPTIONAL), Array[PortType](ImagePortObject.TYPE)) {
   import BatchVegaViewerNodeModel._
 
-  private[this] final val vegaSpecification = new SettingsModelString(CFGKEY_VEGA_SPEC, DEFAULT_VEGA_SPEC)
-  private[this] final val mapping = new SettingsModelString(CFGKEY_MAPPING, DEFAULT_MAPPING)
-  private[this] final val imageFormat = new SettingsModelString(CFGKEY_FORMAT, DEFAULT_FORMAT)
+  private[this] final val vegaSpecification = createVegaSettings
+  private[this] final val mapping = createMappingSettings
+  private[this] final val imageFormat = createFormatSettings
 
   /**
    * @inheritdoc
    */
   @throws[Exception]
   protected override def execute(inData: Array[PortObject],
-                                 exec: ExecutionContext): Array[PortObject] = {
+    exec: ExecutionContext): Array[PortObject] = {
     val tempFile = inData match {
       case Array(data: BufferedDataTable) => generateJSONTable(data)
-      case _                              => None
+      case _ => None
     }
     val resultFile = try {
       val specFile = FileUtil.createTempFile("spec", ".json", true)
       try {
         writeSpec(tempFile, specFile)
-        //        val writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(specFile), "UTF-8"))
-        //        try {
-        //          val rawSpecText = vegaSpecification.getStringValue
-        //          val specText = tempFile.fold(rawSpecText)(file => rawSpecText.replaceAll("data\\.json", file.toURI.toURL.toString.replaceFirst("file:/", "file://")))
-        //          writer.write(specText)
-        //        } finally {
-        //          writer.close
-        //        }
-        //        import sys.process._
-        //        val store = BatchVegaViewerNodePlugin.getDefault.getPreferenceStore
-        //        val outputFile = FileUtil.createTempFile("vega_output", ".img", true)
-        //        val command = '"' + store.getString(PreferenceConstants.nodeJSLocation) + "\" \"" +
-        //          store.getString(PreferenceConstants.vegaLocation) + File.separatorChar + (imageFormat.getStringValue match {
-        //            case SVG => "vg2svg\" -h"
-        //            case PNG => "vg2png\""
-        //          }) /*+"-b \"" + tempFile.getParentFile.getAbsolutePath.replace('\\', '/') + "\" "*/ + "\"" + specFile.getAbsolutePath + "\" \"" + outputFile.getAbsolutePath + '"'
-        //        logger.debug("Command to execute: " + command)
-        //        val process = Process.apply(command)
-        //        process.!!(ProcessLogger.apply(
-        //          out => {
-        //            logger.warn(out)
-        //          },
-        //          (err: String) => {
-        //            logger.error(err)
-        //          }))
         executeProcess(specFile)
       } finally {
         specFile.delete
@@ -192,7 +182,7 @@ class BatchVegaViewerNodeModel extends NodeModel(Array[PortType](BufferedDataTab
       imageFormat.getStringValue match {
         case SVG => (new SvgImageContent(output), SvgCell.TYPE)
         case PNG => (new PNGImageContent(output), PNGImageContent.TYPE)
-        case _   => throw new UnsupportedOperationException("Unknown image type: " + imageFormat.getStringValue)
+        case _ => throw new UnsupportedOperationException("Unknown image type: " + imageFormat.getStringValue)
       }
     } finally {
       output.close
@@ -255,7 +245,7 @@ class BatchVegaViewerNodeModel extends NodeModel(Array[PortType](BufferedDataTab
    * @inheritdoc
    */
   @throws[InvalidSettingsException]
-  protected override def configure(inSpecs: Array[DataTableSpec]): Array[DataTableSpec] = {
+  protected override def configure(inSpecs: Array[PortObjectSpec]): Array[PortObjectSpec] = {
 
     // TODO: check if user settings are available, fit to the incoming
     // table structure, and the incoming types are feasible for the node
@@ -263,7 +253,7 @@ class BatchVegaViewerNodeModel extends NodeModel(Array[PortType](BufferedDataTab
     // the spec of its output data table(s) (if you can, otherwise an array
     // with null elements), or throw an exception with a useful user message
 
-    Array[DataTableSpec] { null: DataTableSpec }
+    Array[PortObjectSpec] { new ImagePortObjectSpec }
   }
 
   /**
@@ -291,9 +281,9 @@ class BatchVegaViewerNodeModel extends NodeModel(Array[PortType](BufferedDataTab
    */
   @throws[InvalidSettingsException]
   protected override def validateSettings(settings: NodeSettingsRO) {
-    new SettingsModelString(CFGKEY_VEGA_SPEC, DEFAULT_VEGA_SPEC).validateSettings(settings)
-    new SettingsModelString(CFGKEY_MAPPING, DEFAULT_MAPPING).validateSettings(settings)
-    new SettingsModelString(CFGKEY_FORMAT, DEFAULT_FORMAT).validateSettings(settings)
+    createVegaSettings.validateSettings(settings)
+    createMappingSettings.validateSettings(settings)
+    createFormatSettings.validateSettings(settings)
   }
 
   /**
@@ -302,7 +292,7 @@ class BatchVegaViewerNodeModel extends NodeModel(Array[PortType](BufferedDataTab
   @throws[IOException]
   @throws[CanceledExecutionException]
   protected override def loadInternals(internDir: File,
-                                       exec: ExecutionMonitor) {
+    exec: ExecutionMonitor) {
     // TODO load internal data. 
     // Everything handed to output ports is loaded automatically (data
     // returned by the execute method, models loaded in loadModelContent,
@@ -318,7 +308,7 @@ class BatchVegaViewerNodeModel extends NodeModel(Array[PortType](BufferedDataTab
   @throws[IOException]
   @throws[CanceledExecutionException]
   protected override def saveInternals(internDir: File,
-                                       exec: ExecutionMonitor) {
+    exec: ExecutionMonitor) {
     logger.debug(internDir.getAbsolutePath)
     // TODO save internal models. 
     // Everything written to output ports is saved automatically (data
@@ -334,11 +324,19 @@ class BatchVegaViewerNodeModel extends NodeModel(Array[PortType](BufferedDataTab
     val writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(specFile), "UTF-8"))
     try {
       val rawSpecText = vegaSpecification.getStringValue
-      val specText = tempFile.fold(rawSpecText)(file => rawSpecText.replaceAll("data\\.json", file.toURI.toURL.toString.replaceFirst("file:/", "file://")))
+      val pattern = Pattern.compile("$inputTable$", Pattern.LITERAL)
+      val specText = tempFile.fold(rawSpecText)(file => replacePairs(pattern.matcher(rawSpecText).replaceAll(file.toURI.toURL.toString.replaceFirst("file:/", "file://"))))
       writer.write(specText)
     } finally {
       writer.close
     }
+  }
+
+  private[this] def replacePairs(spec: String) = {
+    mapping.getEnabledPairs().asScala.to[Vector].sortBy(-_.getFirst.getStringValue.length).foldLeft(spec)((spec, pair) => {
+      val pattern = Pattern.compile(pair.getFirst.getStringValue, Pattern.LITERAL)
+      pattern.matcher(spec).replaceAll(pair.getSecond.getStringValue)
+    })
   }
 
   @throws[Exception]
@@ -357,10 +355,10 @@ class BatchVegaViewerNodeModel extends NodeModel(Array[PortType](BufferedDataTab
     try {
       val output = process.!!(ProcessLogger(
         out => {
-          logger.warn(out)
+          logger.debug(out)
         },
         (err: String) => {
-          logger.error(err)
+          logger.debug(err)
           sb.append(err).append('\n')
         }))
     } catch {
@@ -371,6 +369,12 @@ class BatchVegaViewerNodeModel extends NodeModel(Array[PortType](BufferedDataTab
       }
     }
     outputFile
+  }
+
+  private[this] def cellType = imageFormat.getStringValue match {
+    case SVG => SvgCell.TYPE
+    case PNG => PNGImageContent.TYPE
+    case _@ f => throw new UnsupportedOperationException("Not supported image format: " + f)
   }
 }
 
