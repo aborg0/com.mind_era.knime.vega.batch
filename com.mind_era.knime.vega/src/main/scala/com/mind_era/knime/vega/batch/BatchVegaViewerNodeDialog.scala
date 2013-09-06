@@ -29,6 +29,7 @@ import org.knime.core.data.`def`.StringCell
 import java.util.EnumSet
 import com.mind_era.knime.util.DialogComponentPairs.Columns
 import java.awt.Dimension
+import org.fife.ui.rsyntaxtextarea.SyntaxConstants
 
 /**
  * <code>NodeDialog</code> for the "BatchVegaViewer" Node.
@@ -49,14 +50,19 @@ class BatchVegaViewerNodeDialog protected[batch] () extends DefaultNodeSettingsP
 
   import BatchVegaViewerNodeModel._
   //TODO replace with RSyntaxTextarea
-  addDialogComponent(new DialogComponentMultiLineString(
-    createVegaSettings, "Vega specification"))
+  setHorizontalPlacement(true)
+  
+  val component = new DialogComponentSyntaxText(
+    createVegaSettings, Some("Vega specification"))
+  addDialogComponent(component)
+  component.textArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JAVASCRIPT)
   
   val mappingPairs = new DialogComponentPairs(
       createMappingSettings, "Key", "Replace", EnumSet.of(Columns.Add, Columns.Remove, Columns.Enable))
   //mappingPairs.getComponentPanel.setPreferredSize(new Dimension(700, 200))
   mappingPairs.setPreferredSize(500, 150)
   addDialogComponent(mappingPairs)
+  closeCurrentGroup
   addDialogComponent(new DialogComponentStringSelection(createFormatSettings, "Image format", POSSIBLE_FORMATS: _*))
 
 //  val server = new Server //(9999)
@@ -96,4 +102,7 @@ class BatchVegaViewerNodeDialog protected[batch] () extends DefaultNodeSettingsP
 //    }
 //  })
 //  addDialogComponent(button)
+
+  
+  override def closeOnESC = false
 }

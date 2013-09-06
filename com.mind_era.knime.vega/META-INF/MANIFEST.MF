@@ -19,7 +19,8 @@ Require-Bundle: org.eclipse.core.runtime,
  org.mortbay.jetty.util;bundle-version="[6.1.0,7.0.0)",
  javax.servlet,
  org.knime.ext.svg;bundle-version="[2.8.0,3.0.0)";resolution:=optional,
- com.mind_era.knime.util;bundle-version="0.0.1"
+ com.mind_era.knime.util;bundle-version="0.0.1",
+ org.fife.rsyntaxtextarea;bundle-version="2.0.4"
 Bundle-ActivationPolicy: lazy
 Export-Package: com.mind_era.knime.vega.batch
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
