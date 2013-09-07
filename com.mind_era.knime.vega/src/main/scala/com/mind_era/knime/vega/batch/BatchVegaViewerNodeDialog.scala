@@ -30,6 +30,10 @@ import java.util.EnumSet
 import com.mind_era.knime.util.DialogComponentPairs.Columns
 import java.awt.Dimension
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants
+import org.fife.ui.autocomplete.AutoCompletion
+import org.fife.ui.autocomplete.DefaultCompletionProvider
+import org.fife.ui.autocomplete.Completion
+import org.fife.ui.autocomplete.BasicCompletion
 
 /**
  * <code>NodeDialog</code> for the "BatchVegaViewer" Node.
@@ -56,6 +60,8 @@ class BatchVegaViewerNodeDialog protected[batch] () extends DefaultNodeSettingsP
     createVegaSettings, Some("Vega specification"))
   addDialogComponent(component)
   component.textArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JAVASCRIPT)
+  val ac = new AutoCompletion(createProvider)
+  ac.install(component.textArea)
   
   val mappingPairs = new DialogComponentPairs(
       createMappingSettings, "Key", "Replace", EnumSet.of(Columns.Add, Columns.Remove, Columns.Enable))
@@ -105,4 +111,14 @@ class BatchVegaViewerNodeDialog protected[batch] () extends DefaultNodeSettingsP
 
   
   override def closeOnESC = false
+  
+  def createProvider = {
+    val ret = new DefaultCompletionProvider
+    for (mark <- Seq("rect", "symbol", "path", "arc", "area", "line", "image", "text", "group")) {
+    	ret.addCompletion(new BasicCompletion(ret, '"' + mark + '"'))
+    }
+    for (mark <- Seq(ROWKEY, COLOR, SHAPE, SIZE, SIZE_FACTOR, HILITED))
+      ret.addCompletion(new BasicCompletion(ret, mark))
+    ret
+  }
 }

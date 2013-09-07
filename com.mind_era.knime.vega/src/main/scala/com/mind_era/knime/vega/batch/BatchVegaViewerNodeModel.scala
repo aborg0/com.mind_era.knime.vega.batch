@@ -141,6 +141,13 @@ object BatchVegaViewerNodeModel {
 
   protected[batch] def createFormatSettings: SettingsModelString =
     new SettingsModelString(CFGKEY_FORMAT, DEFAULT_FORMAT)
+  
+  protected[batch] final val ROWKEY = "KNIMERowKey"
+  protected[batch] final val COLOR = "KNIMEColor"
+  protected[batch] final val SHAPE = "KNIMEShape"
+  protected[batch] final val SIZE = "KNIMESize"
+  protected[batch] final val SIZE_FACTOR = "KNIMESizeFactor"
+  protected[batch] final val HILITED = "KNIMEHiLited"
 }
 
 /**
@@ -205,6 +212,13 @@ class BatchVegaViewerNodeModel extends NodeModel(Array[PortType](BufferedDataTab
         for (colIndex <- 0 until spec.getNumColumns) {
           processingFunctions(colIndex)(row.getCell(colIndex))
         }
+        gen.writeStringField(ROWKEY, row.getKey.getString)
+        val hiLited = getInHiLiteHandler(0).getHiLitKeys().contains(row.getKey)
+        gen.writeStringField(COLOR, "#" + Integer.toHexString(data.getSpec.getRowColor(row).getColor(false, hiLited).getRGB))
+        gen.writeStringField(SHAPE, data.getSpec.getRowShape(row).toString)
+        gen.writeNumberField(SIZE, data.getSpec.getRowSize(row))
+        gen.writeNumberField(SIZE_FACTOR, data.getSpec.getRowSizeFactor(row))
+        gen.writeBooleanField(HILITED, hiLited)
         gen.writeEndObject
       }
       gen.writeEndArray

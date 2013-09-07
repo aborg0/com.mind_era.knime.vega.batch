@@ -8,6 +8,7 @@ import org.knime.core.node.defaultnodesettings.SettingsModelString
 import org.knime.core.node.port.PortObjectSpec
 import org.fife.ui.rtextarea.RTextScrollPane
 import javax.swing.border.TitledBorder
+import org.fife.rsyntaxarea.internal.RSyntaxAreaActivator
 
 /**
  * Wraps an [RSyntaxTextArea].
@@ -15,6 +16,7 @@ import javax.swing.border.TitledBorder
  * @author Gabor Bakos
  */
 class DialogComponentSyntaxText(model: SettingsModelString, title: Option[String] = None) extends DialogComponent(model) {
+  RSyntaxAreaActivator.ensureWorkaroundBug3692Applied
   val textArea = new _root_.org.fife.ui.rsyntaxtextarea.RSyntaxTextArea(11, 80)
   private[this] val scroll = new RTextScrollPane(textArea)
   title.fold()(t => scroll.setBorder(new TitledBorder(t)))
@@ -23,5 +25,5 @@ class DialogComponentSyntaxText(model: SettingsModelString, title: Option[String
   protected /*[package defaultnodesettings]*/ def setEnabledComponents(enabled: Boolean): Unit = textArea.setEnabled(enabled)
   def setToolTipText(tooltip: String): Unit = textArea.setToolTipText(tooltip)
   protected /*[package defaultnodesettings]*/ def updateComponent: Unit = textArea.setText(model.getStringValue)
-  protected /*[package defaultnodesettings]*/ def validateSettingsBeforeSave: Unit = {}
+  protected /*[package defaultnodesettings]*/ def validateSettingsBeforeSave: Unit = {model.setStringValue(textArea.getText)}
 }
