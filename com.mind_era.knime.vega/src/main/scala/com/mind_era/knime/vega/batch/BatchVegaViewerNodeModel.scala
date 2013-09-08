@@ -267,6 +267,9 @@ class BatchVegaViewerNodeModel extends NodeModel(Array[PortType](BufferedDataTab
     // the spec of its output data table(s) (if you can, otherwise an array
     // with null elements), or throw an exception with a useful user message
 
+    if (imageFormat.getStringValue == SVG && !svgSupported) {
+      throw new InvalidSettingsException("SVG is not supported, please install org.knime.ext.svg.")
+    }
     Array[PortObjectSpec] { new ImagePortObjectSpec }
   }
 
@@ -297,7 +300,11 @@ class BatchVegaViewerNodeModel extends NodeModel(Array[PortType](BufferedDataTab
   protected override def validateSettings(settings: NodeSettingsRO) {
     createVegaSettings.validateSettings(settings)
     createMappingSettings.validateSettings(settings)
-    createFormatSettings.validateSettings(settings)
+    val f = createFormatSettings
+    f.validateSettings(settings)
+    if (f.getStringValue == SVG && !svgSupported) {
+      throw new InvalidSettingsException("SVG is not supported, please install org.knime.ext.svg.")
+    }
   }
 
   /**
