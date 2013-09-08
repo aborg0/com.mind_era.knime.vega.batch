@@ -1,37 +1,69 @@
 <?xml version="1.0" encoding="utf-8"?>
-<knimeNode icon="./default.png" type="Visualizer" xmlns="http://knime.org/node/v2.8" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://knime.org/node/v2.8 http://knime.org/node/v2.8.xsd">
-    <name>Vega Viewer</name>
-    
-    <shortDescription>
-        Converts data to (https://github.com/trifacta/vega)vega images using custom figure descriptor.
+<knimeNode icon="./default.png" type="Visualizer"
+  xmlns="http://knime.org/node/v2.8" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://knime.org/node/v2.8 http://knime.org/node/v2.8.xsd">
+  <name>Vega Viewer</name>
+
+  <shortDescription>
+        Converts data to Vega (https://github.com/trifacta/vega) images using custom figure descriptor.
     </shortDescription>
-    
-    <fullDescription>
-        <intro>Insert long description here...</intro>
-        
-        
-        <option name="short name of first option (like in the dialog)">description of first option</option>
-        <option name="short name of second option (like in the dialog)">description of second option</option>
-        <!-- possibly more options that can also be grouped by tabs -->
-        <!--
-        <tab name="Standard Options">
-            <option name="short name of first option (like in the dialog)">description of first option</option>
-            <option name="short name of second option (like in the dialog)">description of second option</option>
-        </tab>
-        <tab name="Advanced Options">
-            <option name="short name of first advanced option (like in the dialog)">description of first advanced option</option>
-        </tab>
-        -->
-    </fullDescription>
-    
-    <ports>
-        <inPort index="0" name="data">data table</inPort>
-        <!-- possibly more input ports here-->
-        <outPort index="0" name="image">the generated image</outPort>
-        <!-- possibly more output ports here-->
-    </ports>    
-    <views>
-        <view index="0" name="interactive view">An interactive view of the resulting data.</view>
-    </views>
+
+  <fullDescription>
+    <intro>
+      The input data table is converted to JSON table and based on the
+      specified vega diagram description, the diagram will be generated.
+      <p>
+        Before the specification is passed to Vega, text substitution
+        is applied to the description, so using flow variables is easier
+        to customize the appearance of the result.
+      </p>
+      <p>
+        To make it work, you should first set the paths of the Node.js
+        and
+        vega installation. (File/Preferences) The
+        <a href="https://github.com/aborg0/com.mind_era.knime.vega.batch">project's homepage</a>
+        give
+        instructions how to install these.
+      </p>
+    </intro>
+
+
+    <option name="Vega specification">The description of the diagram generation.
+      Please check the tutorial and the other documentation on the
+      homepage for details.
+    </option>
+    <option name="Key-Replace">
+      A table for mapping certain text (
+      <tt>Key</tt>
+      ) to another (
+      <tt>Replace</tt>
+      ) replacement.
+      Only the enabled pairs are applied. The pairs are
+      sorted to
+      descending order by their length to ease applying to the
+      longest
+      transformation first. Each replacement is performed on the
+      result
+      of the previous transformation.
+    </option>
+    <option name="Image format">The output format. (PNG, or SVG if it is available)</option>
+    <!-- possibly more options that can also be grouped by tabs -->
+    <!-- <tab name="Standard Options"> <option name="short name of first 
+      option (like in the dialog)">description of first option</option> <option 
+      name="short name of second option (like in the dialog)">description of second 
+      option</option> </tab> <tab name="Advanced Options"> <option name="short 
+      name of first advanced option (like in the dialog)">description of first 
+      advanced option</option> </tab> -->
+  </fullDescription>
+
+  <ports>
+    <inPort index="0" name="data">data table</inPort>
+    <!-- possibly more input ports here -->
+    <outPort index="0" name="image">the generated image</outPort>
+    <!-- possibly more output ports here -->
+  </ports>
+  <views>
+    <view index="0" name="interactive view">An interactive view of the resulting data.
+    </view>
+  </views>
 </knimeNode>
