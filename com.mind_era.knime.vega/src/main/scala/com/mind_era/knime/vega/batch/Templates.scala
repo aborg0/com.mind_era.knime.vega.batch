@@ -57,5 +57,62 @@ object Templates {
     }
   ]
 }""".trim
-  val template = LinkedHashMap(("Bar chart", BatchVegaViewerNodeModel.DEFAULT_VEGA_SPEC), ("Arc", ARC))
+  val AREA = """
+{
+  "width": 500,
+  "height": 200,
+  "padding": {"top": 10, "left": 30, "bottom": 30, "right": 10},
+  "data": [
+    {
+      "name": "table",
+      "url": "$inputTable$"
+,
+      "transform": [
+        {"type": "sort", "by": "data.$numeric1$"}
+      ]
+    }
+  ],
+  "scales": [
+    {
+      "name": "x",
+      "type": "linear",
+      "range": "width",
+      "zero": false,
+      "domain": {"data": "table", "field": "data.$numeric1$"}
+    },
+    {
+      "name": "y",
+      "type": "linear",
+      "range": "height",
+      "nice": true,
+      "domain": {"data": "table", "field": "data.$numeric2$"}
+    }
+  ],
+  "axes": [
+    {"type": "x", "scale": "x", "ticks": 20},
+    {"type": "y", "scale": "y"}
+  ],
+  "marks": [
+    {
+      "type": "area",
+      "from": {"data": "table"},
+      "properties": {
+        "enter": {
+          "interpolate": {"value": "monotone"},
+          "x": {"scale": "x", "field": "data.$numeric1$"},
+          "y": {"scale": "y", "field": "data.$numeric2$"},
+          "y2": {"scale": "y", "value": 0},
+          "fill": {"value": "steelblue"}
+        },
+        "update": {
+          "fillOpacity": {"value": 1}
+        },
+        "hover": {
+          "fillOpacity": {"value": 0.5}
+        }
+      }
+    }
+  ]
+}""".trim
+  val template = LinkedHashMap(("Bar chart", BatchVegaViewerNodeModel.DEFAULT_VEGA_SPEC), ("Arc", ARC), ("Area", AREA))
 }
