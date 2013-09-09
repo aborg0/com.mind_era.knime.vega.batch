@@ -34,6 +34,13 @@ import org.fife.ui.autocomplete.AutoCompletion
 import org.fife.ui.autocomplete.DefaultCompletionProvider
 import org.fife.ui.autocomplete.Completion
 import org.fife.ui.autocomplete.BasicCompletion
+import org.knime.core.node.port.PortObjectSpec
+import org.knime.core.data.DataTableSpec
+import scala.collection.JavaConverters._
+import java.util.Collections
+import org.knime.core.data.DoubleValue
+import java.util.Collection
+import java.util.ArrayList
 
 /**
  * <code>NodeDialog</code> for the "BatchVegaViewer" Node.
@@ -58,14 +65,34 @@ class BatchVegaViewerNodeDialog protected[batch] () extends DefaultNodeSettingsP
   
   //TODO add preferencepage/extension point to collect templates.
   val component = new DialogComponentSyntaxText(
-    createVegaSettings, Some("Vega specification"), /*Map(("Bar chart", DEFAULT_VEGA_SPEC))*/Templates.template)
+    createVegaSettings, Some("Vega specification"), Templates.template)
   addDialogComponent(component)
   component.textArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JAVASCRIPT)
   val ac = new AutoCompletion(createProvider)
   ac.install(component.textArea)
   
   val mappingPairs = new DialogComponentPairs(
-      createMappingSettings, "Key", "Replace", EnumSet.of(Columns.Add, Columns.Remove, Columns.Enable))
+      createMappingSettings, "Key", "Replace", EnumSet.of(Columns.Add, Columns.Remove, Columns.Enable)) {
+        override def rightSuggestions(spec: Array[PortObjectSpec]) = {
+      spec(0) match {
+        case dt: DataTableSpec => {
+          val ret = new ArrayList[StringCell]()
+          for (spec <- dt.asScala if spec.getType.isCompatible(classOf[DoubleValue])) yield {
+            ret.add(new StringCell(spec.getName))
+          }
+          ret
+        }
+        case _ => Collections.emptyList[StringCell]
+      }
+    }
+    override def leftSuggestions(spec: Array[PortObjectSpec]) = {
+      Collections.singletonList(new StringCell("$inputTable$"))
+    }
+    override def hasSuggestions(spec: Array[PortObjectSpec], left: Boolean) = {
+      true
+    }
+  }
+
   //mappingPairs.getComponentPanel.setPreferredSize(new Dimension(700, 200))
   mappingPairs.setPreferredSize(500, 150)
   addDialogComponent(mappingPairs)
