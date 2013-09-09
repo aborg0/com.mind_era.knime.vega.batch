@@ -1,0 +1,167 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!-- Schema file written by PDE -->
+<schema targetNamespace="com.mind_era.knime.vega.batch" xmlns="http://www.w3.org/2001/XMLSchema">
+<annotation>
+      <appInfo>
+         <meta.schema plugin="com.mind_era.knime.vega.batch" id="vega_templates" name="com.mind_era.knime.vega.templates"/>
+      </appInfo>
+      <documentation>
+         [Enter description of this extension point.]
+      </documentation>
+   </annotation>
+
+   <element name="extension">
+      <annotation>
+         <appInfo>
+            <meta.element />
+         </appInfo>
+         <documentation>
+            The collection of the templates defined.
+         </documentation>
+      </annotation>
+      <complexType>
+         <sequence minOccurs="1" maxOccurs="unbounded">
+            <element ref="template"/>
+         </sequence>
+         <attribute name="point" type="string" use="required">
+            <annotation>
+               <documentation>
+                  
+               </documentation>
+            </annotation>
+         </attribute>
+         <attribute name="id" type="string">
+            <annotation>
+               <documentation>
+                  
+               </documentation>
+            </annotation>
+         </attribute>
+         <attribute name="name" type="string">
+            <annotation>
+               <documentation>
+                  
+               </documentation>
+               <appInfo>
+                  <meta.attribute translatable="true"/>
+               </appInfo>
+            </annotation>
+         </attribute>
+      </complexType>
+   </element>
+
+   <element name="template">
+      <annotation>
+         <documentation>
+            A template with the parameters.
+         </documentation>
+      </annotation>
+      <complexType>
+         <choice minOccurs="2" maxOccurs="2">
+            <sequence minOccurs="1" maxOccurs="unbounded">
+               <element ref="parameter"/>
+            </sequence>
+            <element ref="text"/>
+         </choice>
+      </complexType>
+   </element>
+
+   <element name="parameter">
+      <annotation>
+         <documentation>
+            Describes the used parameters.
+         </documentation>
+      </annotation>
+      <complexType>
+         <attribute name="paramType" use="required">
+            <annotation>
+               <documentation>
+                  The data type of the expected parameter.
+               </documentation>
+            </annotation>
+            <simpleType>
+               <restriction base="string">
+                  <enumeration value="categorical/any">
+                  </enumeration>
+                  <enumeration value="categorical/string">
+                  </enumeration>
+                  <enumeration value="categorical/numeric">
+                  </enumeration>
+                  <enumeration value="numeric/integer">
+                  </enumeration>
+                  <enumeration value="numeric/real">
+                  </enumeration>
+                  <enumeration value="ordinal/any">
+                  </enumeration>
+                  <enumeration value="ordinal/string">
+                  </enumeration>
+                  <enumeration value="ordinal/integer">
+                  </enumeration>
+                  <enumeration value="ordinal/real">
+                  </enumeration>
+               </restriction>
+            </simpleType>
+         </attribute>
+         <attribute name="name" type="string" use="required">
+            <annotation>
+               <documentation>
+                  The name of the variable in the template.
+               </documentation>
+            </annotation>
+         </attribute>
+         <attribute name="required" type="boolean">
+            <annotation>
+               <documentation>
+                  Is it required?
+               </documentation>
+            </annotation>
+         </attribute>
+      </complexType>
+   </element>
+
+   <element name="text" type="string">
+      <annotation>
+         <documentation>
+            The JSON template with references to the parameters.
+         </documentation>
+      </annotation>
+   </element>
+
+   <annotation>
+      <appInfo>
+         <meta.section type="since"/>
+      </appInfo>
+      <documentation>
+         [Enter the first release in which this extension point appears.]
+      </documentation>
+   </annotation>
+
+   <annotation>
+      <appInfo>
+         <meta.section type="examples"/>
+      </appInfo>
+      <documentation>
+         [Enter extension point usage example here.]
+      </documentation>
+   </annotation>
+
+   <annotation>
+      <appInfo>
+         <meta.section type="apiinfo"/>
+      </appInfo>
+      <documentation>
+         [Enter API information here.]
+      </documentation>
+   </annotation>
+
+   <annotation>
+      <appInfo>
+         <meta.section type="implementation"/>
+      </appInfo>
+      <documentation>
+         [Enter information about supplied implementation of this extension point.]
+      </documentation>
+   </annotation>
+
+
+</schema>
