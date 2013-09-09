@@ -36,7 +36,7 @@
       </initializer>
    </extension>
    <extension point="org.eclipse.ui.preferencePages">
-      <page class="com.mind_era.knime.vega.batch.preferences.PreferencePage" id="com.mind_era.knime.vega.batch.preferences.PreferencePage" name="Vega Preferences"/>
+      <page class="com.mind_era.knime.vega.batch.preferences.PreferencePage" id="com.mind_era.knime.vega.batch.preferences.PreferencePage" name="Vega Preferences" category="org.knime.workbench.ui.preferences"/>
    </extension>
    
 </plugin>

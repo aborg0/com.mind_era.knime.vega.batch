@@ -20,10 +20,9 @@
       <p>
         To make it work, you should first set the paths of the Node.js
         and
-        vega installation. (File/Preferences) The
+        vega installation. (File/Preferences/KNIME/Vega Preferences) The
         <a href="https://github.com/aborg0/com.mind_era.knime.vega.batch">project's homepage</a>
-        give
-        instructions how to install these.
+        give instructions how to install these.
       </p>
     </intro>
 
@@ -31,6 +30,9 @@
     <option name="Vega specification">The description of the diagram generation.
       Please check the tutorial and the other documentation on the
       homepage for details.
+      <p>
+      You can refer to the table in JSON fromat as $inputTable$.
+      </p>
     </option>
     <option name="Key-Replace">
       A table for mapping certain text (

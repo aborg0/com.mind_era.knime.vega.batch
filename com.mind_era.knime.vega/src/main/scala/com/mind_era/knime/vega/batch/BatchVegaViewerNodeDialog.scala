@@ -53,11 +53,12 @@ import org.fife.ui.autocomplete.BasicCompletion
 class BatchVegaViewerNodeDialog protected[batch] () extends DefaultNodeSettingsPane {
 
   import BatchVegaViewerNodeModel._
-  //TODO replace with RSyntaxTextarea
+  //TODO Check whether the MPS could be easily embedded here, maybe 3.0
   setHorizontalPlacement(true)
   
+  //TODO add preferencepage/extension point to collect templates.
   val component = new DialogComponentSyntaxText(
-    createVegaSettings, Some("Vega specification"))
+    createVegaSettings, Some("Vega specification"), /*Map(("Bar chart", DEFAULT_VEGA_SPEC))*/Templates.template)
   addDialogComponent(component)
   component.textArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JAVASCRIPT)
   val ac = new AutoCompletion(createProvider)

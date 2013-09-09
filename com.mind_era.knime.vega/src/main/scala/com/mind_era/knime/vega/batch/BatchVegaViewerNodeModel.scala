@@ -59,6 +59,7 @@ import java.util.regex.Pattern
 import com.mind_era.knime.util.SettingsModelPairs
 import java.util.Collections
 import org.knime.core.node.port.PortObjectSpec
+import scala.compat.Platform
 
 /**
  * Companion object for BatchVegaViewerNodeModel.
@@ -67,16 +68,6 @@ object BatchVegaViewerNodeModel {
 
   // the logger instance
   private[BatchVegaViewerNodeModel] final val logger = NodeLogger.getLogger(classOf[BatchVegaViewerNodeModel])
-
-  /**
-   * the settings key which is used to retrieve and
-   * store the settings (from the dialog or from a settings file)
-   * (package visibility to be usable from the dialog).
-   */
-  private[batch] final val CFGKEY_COUNT = "Count"
-
-  /** initial default count value. */
-  private[batch] final val DEFAULT_COUNT = 100
 
   private[batch] final val CFGKEY_VEGA_SPEC = "Vega Specification"
 
@@ -141,7 +132,7 @@ object BatchVegaViewerNodeModel {
 
   protected[batch] def createFormatSettings: SettingsModelString =
     new SettingsModelString(CFGKEY_FORMAT, DEFAULT_FORMAT)
-  
+
   protected[batch] final val ROWKEY = "KNIMERowKey"
   protected[batch] final val COLOR = "KNIMEColor"
   protected[batch] final val SHAPE = "KNIMEShape"
@@ -167,7 +158,7 @@ class BatchVegaViewerNodeModel extends NodeModel(Array[PortType](BufferedDataTab
    * @inheritdoc
    */
   @throws[Exception]
-  protected override def execute(inData: Array[PortObject],
+  protected override def execute(inData: Array[PortObject], 
     exec: ExecutionContext): Array[PortObject] = {
     val tempFile = inData match {
       case Array(data: BufferedDataTable) => generateJSONTable(data)
@@ -185,11 +176,16 @@ class BatchVegaViewerNodeModel extends NodeModel(Array[PortType](BufferedDataTab
       tempFile.fold(())(_.delete)
     }
     val output = new BufferedInputStream(new FileInputStream(resultFile))
-    val (content, dataType) = try {
+      val (content, dataType) = try {
       imageFormat.getStringValue match {
-        case SVG => (new SvgImageContent(output), SvgCell.TYPE)
+        case SVG => ({debugContent(resultFile); new SvgImageContent(output)}, SvgCell.TYPE)
         case PNG => (new PNGImageContent(output), PNGImageContent.TYPE)
         case _ => throw new UnsupportedOperationException("Unknown image type: " + imageFormat.getStringValue)
+      }
+    } catch {
+      case e: RuntimeException => {
+        debugContent(resultFile)
+        throw e
       }
     } finally {
       output.close
@@ -396,6 +392,26 @@ class BatchVegaViewerNodeModel extends NodeModel(Array[PortType](BufferedDataTab
     case SVG => SvgCell.TYPE
     case PNG => PNGImageContent.TYPE
     case _@ f => throw new UnsupportedOperationException("Not supported image format: " + f)
+  }
+  
+  @throws[IOException]
+  private def debugContent(resultFile: java.io.File): Unit = {
+    var source: Source = null
+    try {
+      source = Source.fromFile(resultFile)
+      val svg = source.getLines.mkString("\n")
+      logger.debug(svg)
+    } catch {
+      case NonFatal(readError) => logger.coding(readError.getMessage)
+    } finally {
+      if (source != null) {
+        try {
+          source.close
+        } catch {
+          case NonFatal(closeError) => logger.coding(closeError.getMessage)
+        }
+      }
+    }
   }
 }
 
