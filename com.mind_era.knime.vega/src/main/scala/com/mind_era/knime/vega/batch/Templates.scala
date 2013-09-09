@@ -29,14 +29,14 @@ object Templates {
     {
       "name": "r",
       "type": "sqrt",
-      "domain": {"data": "table", "field": "$numeric$"},
+      "domain": {"data": "table", "field": "data.$numeric$"},
       "range": [20, 100]
     }
   ],
   "marks": [
     {
       "type": "arc",
-      "from": {"data": "table", "field":"$numeric$"},
+      "from": {"data": "table"},
       "properties": {
         "enter": {
           "x": {"group": "width", "mult": 0.5},
@@ -44,7 +44,7 @@ object Templates {
           "startAngle": {"field": "startAngle"},
           "endAngle": {"field": "endAngle"},
           "innerRadius": {"value": 20},
-          "outerRadius": {"value": 200},
+          "outerRadius": {"scale": "r", "field": "data.$numeric$"},
           "stroke": {"value": "#fff"}
         },
         "update": {

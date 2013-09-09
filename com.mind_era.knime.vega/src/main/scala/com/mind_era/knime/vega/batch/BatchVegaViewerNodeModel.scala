@@ -266,7 +266,7 @@ class BatchVegaViewerNodeModel extends NodeModel(Array[PortType](BufferedDataTab
     if (imageFormat.getStringValue == SVG && !svgSupported) {
       throw new InvalidSettingsException("SVG is not supported, please install org.knime.ext.svg.")
     }
-    Array[PortObjectSpec] { new ImagePortObjectSpec }
+    Array[PortObjectSpec] { new ImagePortObjectSpec(cellType) }
   }
 
   /**
