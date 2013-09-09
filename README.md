@@ -23,3 +23,7 @@ paths in the preferences.
  - the SVG extension is required to create SVG images to KNIME.
 
 The following page might be more up-to-date: [Installing node canvas for Windows](https://github.com/benjamind/delarre.docpad/blob/master/src/documents/posts/installing-node-canvas-for-windows.html.md)
+
+
+## License
+Released under the [AGPL v3](http://www.gnu.org/licenses/agpl-3.0.html) license.
