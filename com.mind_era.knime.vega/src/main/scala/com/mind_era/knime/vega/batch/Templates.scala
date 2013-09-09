@@ -114,5 +114,97 @@ object Templates {
     }
   ]
 }""".trim
-  val template = LinkedHashMap(("Bar chart", BatchVegaViewerNodeModel.DEFAULT_VEGA_SPEC), ("Arc", ARC), ("Area", AREA))
+  val GROUPED_BAR = """
+{
+  "width": 300,
+  "height": 240,
+  "data": [
+    {
+      "name": "table",
+      "url": "$inputTable$"
+    }
+  ],
+  "scales": [
+    {
+      "name": "cat",
+      "type": "ordinal",
+      "range": "height",
+      "padding": 0.2,
+      "domain": {"data": "table", "field": "data.$nominal1$"}
+    },
+    {
+      "name": "val",
+      "range": "width",
+      "round": true,
+      "nice": true,
+      "domain": {"data": "table", "field": "data.$numeric$"}
+    },
+    {
+      "name": "color",
+      "type": "ordinal",
+      "range": "category20"
+    }
+  ],
+  "axes": [
+    {"type": "y", "scale": "cat", "tickSize": 0, "tickPadding": 8},
+    {"type": "x", "scale": "val"}
+  ],
+  "marks": [
+    {
+      "type": "group",
+      "from": {
+        "data": "table",
+        "transform": [{"type":"facet", "keys":["data.$nominal1$"]}]
+      },
+      "properties": {
+        "enter": {
+          "y": {"scale": "cat", "field": "key"},
+          "height": {"scale": "cat", "band": true}
+        }
+      },
+      "scales": [
+        {
+          "name": "pos",
+          "type": "ordinal",
+          "range": "height",
+          "domain": {"field": "data.$nominal2$"}
+        }
+      ],
+      "marks": [
+        {
+          "type": "rect",
+          "properties": {
+            "enter": {
+              "y": {"scale": "pos", "field": "data.$nominal2$"},
+              "height": {"scale": "pos", "band": true},
+              "x": {"scale": "val", "field": "data.$numeric$"},
+              "x2": {"scale": "val", "value": 0},
+              "fill": {"scale": "color", "field": "data.$nominal2$"}
+            }
+          }
+        },
+        {
+          "type": "text",
+          "properties": {
+            "enter": {
+              "y": {"scale": "pos", "field": "data.$nominal2$"},
+              "dy": {"scale": "pos", "band": true, "mult": 0.5},
+              "x": {"scale": "val", "field": "data.$numeric$", "offset": -4},
+              "fill": {"value": "white"},
+              "align": {"value": "right"},
+              "baseline": {"value": "middle"},
+              "text": {"field": "data.$numeric$"}
+            }
+          }
+        }
+      ]
+    }
+  ]
+}""".trim
+  val template = LinkedHashMap(
+      ("Bar chart", BatchVegaViewerNodeModel.DEFAULT_VEGA_SPEC),
+      ("Arc", ARC),
+      ("Area", AREA),
+      ("Grouped bar", GROUPED_BAR)
+      )
 }
