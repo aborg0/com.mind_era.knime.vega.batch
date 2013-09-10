@@ -41,6 +41,8 @@ import java.util.Collections
 import org.knime.core.data.DoubleValue
 import java.util.Collection
 import java.util.ArrayList
+import java.util.Arrays
+import javax.swing.JComboBox
 
 /**
  * <code>NodeDialog</code> for the "BatchVegaViewer" Node.
@@ -62,88 +64,91 @@ class BatchVegaViewerNodeDialog protected[batch] () extends DefaultNodeSettingsP
   import BatchVegaViewerNodeModel._
   //TODO Check whether the MPS could be easily embedded here, maybe 3.0
   setHorizontalPlacement(true)
-  
+
   //TODO add preferencepage/extension point to collect templates.
   val component = new DialogComponentSyntaxText(
-    createVegaSettings, Some("Vega specification"), Templates.template)
+    createVegaSettings, Some("Vega specification"), Templates.template.map(p=>(p._1, p._2.text)))
   addDialogComponent(component)
   component.textArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JAVASCRIPT)
   val ac = new AutoCompletion(createProvider)
   ac.install(component.textArea)
-  
+
   val mappingPairs = new DialogComponentPairs(
-      createMappingSettings, "Key", "Replace", EnumSet.of(Columns.Add, Columns.Remove, Columns.Enable)) {
-        override def rightSuggestions(spec: Array[PortObjectSpec]) = {
-      spec(0) match {
-        case dt: DataTableSpec => {
-          val ret = new ArrayList[StringCell]()
-          for (spec <- dt.asScala if spec.getType.isCompatible(classOf[DoubleValue])) yield {
-            ret.add(new StringCell(spec.getName))
-          }
-          ret
-        }
-        case _ => Collections.emptyList[StringCell]
-      }
+    createMappingSettings, "Key", "Replace", EnumSet.of(Columns.Add, Columns.Remove, Columns.Enable)) {
+    override def rightSuggestions(spec: Array[PortObjectSpec]) = {
+      columnsFromSpec(spec, 0)
     }
     override def leftSuggestions(spec: Array[PortObjectSpec]) = {
-      Collections.singletonList(new StringCell("$inputTable$"))
+      val arr = (new StringCell("$inputTable$") +: templateParameters.map(new StringCell(_))).toArray
+      Arrays.asList(arr:_*)
     }
     override def hasSuggestions(spec: Array[PortObjectSpec], left: Boolean) = {
       true
+    }
+    private[this] var templateParameters: Seq[String] = Seq()
+    
+    def updateSuggestions(parameters: Seq[String]) = {
+      templateParameters = parameters
+      checkConfigurabilityBeforeLoad(getLastTableSpecs)
     }
   }
 
   //mappingPairs.getComponentPanel.setPreferredSize(new Dimension(700, 200))
   mappingPairs.setPreferredSize(500, 150)
+  component.addTemlateChangeListener(new AbstractAction() {
+    override def actionPerformed(e: ActionEvent): Unit = {
+      val template = Templates.template.get(e.getSource().asInstanceOf[JComboBox[_]].getSelectedItem().asInstanceOf[String])
+      template.fold()(t=> mappingPairs.updateSuggestions(t.parameters.map(_.name)))
+    }
+  })
   addDialogComponent(mappingPairs)
   closeCurrentGroup
   addDialogComponent(new DialogComponentStringSelection(createFormatSettings, "Image format", POSSIBLE_FORMATS: _*))
 
-//  val server = new Server //(9999)
-//  val connector = new SelectChannelConnector()
-//  connector.setPort(9999)
-//  server.addConnector(connector)
-//
-//  val resourceHandler = new ResourceHandler()
-//  //resourceHandler.setDirectoriesListed(true)
-//  //resourceHandler.setWelcomeFiles(Array[String]("index.html"))
-//
-//  resourceHandler.setResourceBase(".")
-//
-//  val handlers = new HandlerList()
-//  val rh: Handler = resourceHandler
-//  handlers.setHandlers(Array[Handler](rh, new DefaultHandler(): Handler));
-//  server.setHandler(handlers)
-//
-//  server.start()
-//  //server.join()
-//  val button = new DialogComponentButton("Preview")
-//  button.addActionListener(new AbstractAction() {
-//    override def actionPerformed(e: ActionEvent) {
-//      val window = new Display
-//      val shell = new Shell(window)
-//      shell.setLayout(new FillLayout)
-//      val browser = new Browser(shell, SWT.NONE)
-//      browser.setSize(800, 600)
-//      shell.pack
-//      shell.open
-//      //browser.setUrl("http://trifacta.github.com/vega/editor")
-//      browser.setUrl("http://localhost:9999/show.html")
-//      while (!shell.isDisposed) {
-//        if (!window.readAndDispatch) window.sleep
-//      }
-//      window.close
-//    }
-//  })
-//  addDialogComponent(button)
+  //  val server = new Server //(9999)
+  //  val connector = new SelectChannelConnector()
+  //  connector.setPort(9999)
+  //  server.addConnector(connector)
+  //
+  //  val resourceHandler = new ResourceHandler()
+  //  //resourceHandler.setDirectoriesListed(true)
+  //  //resourceHandler.setWelcomeFiles(Array[String]("index.html"))
+  //
+  //  resourceHandler.setResourceBase(".")
+  //
+  //  val handlers = new HandlerList()
+  //  val rh: Handler = resourceHandler
+  //  handlers.setHandlers(Array[Handler](rh, new DefaultHandler(): Handler));
+  //  server.setHandler(handlers)
+  //
+  //  server.start()
+  //  //server.join()
+  //  val button = new DialogComponentButton("Preview")
+  //  button.addActionListener(new AbstractAction() {
+  //    override def actionPerformed(e: ActionEvent) {
+  //      val window = new Display
+  //      val shell = new Shell(window)
+  //      shell.setLayout(new FillLayout)
+  //      val browser = new Browser(shell, SWT.NONE)
+  //      browser.setSize(800, 600)
+  //      shell.pack
+  //      shell.open
+  //      //browser.setUrl("http://trifacta.github.com/vega/editor")
+  //      browser.setUrl("http://localhost:9999/show.html")
+  //      while (!shell.isDisposed) {
+  //        if (!window.readAndDispatch) window.sleep
+  //      }
+  //      window.close
+  //    }
+  //  })
+  //  addDialogComponent(button)
 
-  
   override def closeOnESC = false
-  
+
   def createProvider = {
     val ret = new DefaultCompletionProvider
     for (mark <- Seq("rect", "symbol", "path", "arc", "area", "line", "image", "text", "group")) {
-    	ret.addCompletion(new BasicCompletion(ret, '"' + mark + '"'))
+      ret.addCompletion(new BasicCompletion(ret, '"' + mark + '"'))
     }
     for (mark <- Seq(ROWKEY, COLOR, SHAPE, SIZE, SIZE_FACTOR, HILITED))
       ret.addCompletion(new BasicCompletion(ret, mark))

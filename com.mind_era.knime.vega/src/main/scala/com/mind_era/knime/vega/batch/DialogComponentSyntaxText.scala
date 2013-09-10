@@ -15,6 +15,7 @@ import javax.swing.JComboBox
 import javax.swing.AbstractAction
 import java.awt.event.ActionEvent
 import javax.swing.JOptionPane
+import java.awt.event.ActionListener
 
 /**
  * Wraps an [RSyntaxTextArea].
@@ -26,11 +27,14 @@ class DialogComponentSyntaxText(model: SettingsModelString, title: Option[String
   val textArea = new _root_.org.fife.ui.rsyntaxtextarea.RSyntaxTextArea(11, 80)
   private[this] val scroll = new RTextScrollPane(textArea)
   title.fold()(t => scroll.setBorder(new TitledBorder(t)))
+  val combo = new JComboBox[String]()
   if (templates.isEmpty) {
 	  getComponentPanel.add(scroll)
   } else {
     val panel = new JPanel(new BorderLayout)
-    val combo = new JComboBox(templates.map(_._1).toArray)
+    for (entry <- templates) {
+      combo.addItem(entry._1)
+    }
     combo.setEditable(false)
     combo.addActionListener(new AbstractAction() {
       override def actionPerformed(e: ActionEvent) = {
@@ -51,4 +55,8 @@ class DialogComponentSyntaxText(model: SettingsModelString, title: Option[String
   def setToolTipText(tooltip: String): Unit = textArea.setToolTipText(tooltip)
   protected /*[package defaultnodesettings]*/ def updateComponent: Unit = textArea.setText(model.getStringValue)
   protected /*[package defaultnodesettings]*/ def validateSettingsBeforeSave: Unit = {model.setStringValue(textArea.getText)}
+  
+  def addTemlateChangeListener(listener: ActionListener) {
+    combo.addActionListener(listener)
+  }
 }

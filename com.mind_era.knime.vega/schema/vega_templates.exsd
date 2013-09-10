@@ -63,6 +63,16 @@
             </sequence>
             <element ref="text"/>
          </choice>
+         <attribute name="name" type="string" use="required">
+            <annotation>
+               <documentation>
+                  The name of the template.
+               </documentation>
+               <appInfo>
+                  <meta.attribute translatable="true"/>
+               </appInfo>
+            </annotation>
+         </attribute>
       </complexType>
    </element>
 
@@ -85,7 +95,9 @@
                   </enumeration>
                   <enumeration value="categorical/string">
                   </enumeration>
-                  <enumeration value="categorical/numeric">
+                  <enumeration value="categorical/integer">
+                  </enumeration>
+                  <enumeration value="numeric/any">
                   </enumeration>
                   <enumeration value="numeric/integer">
                   </enumeration>

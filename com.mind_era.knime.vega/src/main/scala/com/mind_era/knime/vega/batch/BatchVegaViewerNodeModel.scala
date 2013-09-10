@@ -158,7 +158,7 @@ class BatchVegaViewerNodeModel extends NodeModel(Array[PortType](BufferedDataTab
    * @inheritdoc
    */
   @throws[Exception]
-  protected override def execute(inData: Array[PortObject], 
+  protected override def execute(inData: Array[PortObject],
     exec: ExecutionContext): Array[PortObject] = {
     val tempFile = inData match {
       case Array(data: BufferedDataTable) => generateJSONTable(data)
@@ -176,9 +176,9 @@ class BatchVegaViewerNodeModel extends NodeModel(Array[PortType](BufferedDataTab
       tempFile.fold(())(_.delete)
     }
     val output = new BufferedInputStream(new FileInputStream(resultFile))
-      val (content, dataType) = try {
+    val (content, dataType) = try {
       imageFormat.getStringValue match {
-        case SVG => ({debugContent(resultFile); new SvgImageContent(output)}, SvgCell.TYPE)
+        case SVG => ({ debugContent(resultFile); new SvgImageContent(output) }, SvgCell.TYPE)
         case PNG => (new PNGImageContent(output), PNGImageContent.TYPE)
         case _ => throw new UnsupportedOperationException("Unknown image type: " + imageFormat.getStringValue)
       }
@@ -295,7 +295,12 @@ class BatchVegaViewerNodeModel extends NodeModel(Array[PortType](BufferedDataTab
   @throws[InvalidSettingsException]
   protected override def validateSettings(settings: NodeSettingsRO) {
     createVegaSettings.validateSettings(settings)
-    createMappingSettings.validateSettings(settings)
+    val m = createMappingSettings
+    m.validateSettings(settings)
+    val wrongGroups = m.getEnabledPairs.asScala.groupBy(_.getFirst).collect { case g if g._2.size > 1 => g }
+    if (wrongGroups.size > 0) {
+      throw new InvalidSettingsException("There are multiple substitutions for the following keys: " + wrongGroups.keys.map(_.getStringValue))
+    }
     val f = createFormatSettings
     f.validateSettings(settings)
     if (f.getStringValue == SVG && !svgSupported) {
@@ -393,7 +398,7 @@ class BatchVegaViewerNodeModel extends NodeModel(Array[PortType](BufferedDataTab
     case PNG => PNGImageContent.TYPE
     case _@ f => throw new UnsupportedOperationException("Not supported image format: " + f)
   }
-  
+
   @throws[IOException]
   private def debugContent(resultFile: java.io.File): Unit = {
     var source: Source = null
