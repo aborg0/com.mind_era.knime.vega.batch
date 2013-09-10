@@ -65,7 +65,7 @@ class BatchVegaViewerNodeDialog protected[batch] () extends DefaultNodeSettingsP
   //TODO Check whether the MPS could be easily embedded here, maybe 3.0
   setHorizontalPlacement(true)
 
-  //TODO add preferencepage/extension point to collect templates.
+  //TODO add preferencepage to collect templates.
   val component = new DialogComponentSyntaxText(
     createVegaSettings, Some("Vega specification"), Templates.template.map(p=>(p._1, p._2.text)))
   addDialogComponent(component)

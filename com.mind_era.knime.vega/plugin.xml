@@ -41,8 +41,10 @@
    </extension>
    <extension
          point="com.mind_era.knime.vega.batch.vega_templates">
-         <template name="Alternative pie">
-           <parameter paramType="numeric/real" name="$numeric$"/>
+         <template name="Arc">
+           <parameter paramType="numeric/real" name="$numeric$">
+The column where the pie sizes come from.
+           </parameter>
            <text>
 {
   "name": "arc",
@@ -80,12 +82,176 @@
           "stroke": {"value": "#fff"}
         },
         "update": {
-          "fill": {"value": "steelblue"}
+          "fill": {"value": "#ccc"}
         },
         "hover": {
           "fill": {"value": "pink"}
         }
       }
+    }
+  ]
+}
+           </text>
+         </template>
+         <template name="Area">
+           <parameter paramType="numeric/real" name="$Xnumeric$">
+The column where the values for the x axis come.
+           </parameter>
+           <parameter paramType="numeric/real" name="$Ynumeric$">
+The column where the values for the y axis come.
+           </parameter>
+           <text>
+{
+  "width": 500,
+  "height": 200,
+  "padding": {"top": 10, "left": 30, "bottom": 30, "right": 10},
+  "data": [
+    {
+      "name": "table",
+      "url": "$inputTable$",
+      "transform": [
+        {"type": "sort", "by": "data.$Xnumeric$"}
+      ]
+    }
+  ],
+  "scales": [
+    {
+      "name": "x",
+      "type": "linear",
+      "range": "width",
+      "zero": false,
+      "domain": {"data": "table", "field": "data.$Xnumeric$"}
+    },
+    {
+      "name": "y",
+      "type": "linear",
+      "range": "height",
+      "nice": true,
+      "domain": {"data": "table", "field": "data.$Ynumeric$"}
+    }
+  ],
+  "axes": [
+    {"type": "x", "scale": "x", "ticks": 20},
+    {"type": "y", "scale": "y"}
+  ],
+  "marks": [
+    {
+      "type": "area",
+      "from": {"data": "table"},
+      "properties": {
+        "enter": {
+          "interpolate": {"value": "monotone"},
+          "x": {"scale": "x", "field": "data.$Xnumeric$"},
+          "y": {"scale": "y", "field": "data.$Ynumeric$"},
+          "y2": {"scale": "y", "value": 0},
+          "fill": {"value": "steelblue"}
+        },
+        "update": {
+          "fillOpacity": {"value": 1}
+        },
+        "hover": {
+          "fillOpacity": {"value": 0.5}
+        }
+      }
+    }
+  ]
+}
+           </text>
+         </template>
+         <template name="Grouped bar">
+           <parameter name="$numeric$" paramType="numeric/any">
+The column for the values
+           </parameter>
+           <parameter name="$nominal1$" paramType="categorical/any">
+The column for the main split of values
+           </parameter>
+           <parameter name="$nominal2$" paramType="categorical/any">
+The column for the inner (coloured) split of values
+           </parameter>
+           <text>
+{
+  "width": 300,
+  "height": 240,
+  "data": [
+    {
+      "name": "table",
+      "url": "$inputTable$"
+    }
+  ],
+  "scales": [
+    {
+      "name": "cat",
+      "type": "ordinal",
+      "range": "height",
+      "padding": 0.2,
+      "domain": {"data": "table", "field": "data.$nominal1$"}
+    },
+    {
+      "name": "val",
+      "range": "width",
+      "round": true,
+      "nice": true,
+      "domain": {"data": "table", "field": "data.$numeric$"}
+    },
+    {
+      "name": "color",
+      "type": "ordinal",
+      "range": "category20"
+    }
+  ],
+  "axes": [
+    {"type": "y", "scale": "cat", "tickSize": 0, "tickPadding": 8},
+    {"type": "x", "scale": "val"}
+  ],
+  "marks": [
+    {
+      "type": "group",
+      "from": {
+        "data": "table",
+        "transform": [{"type":"facet", "keys":["data.$nominal1$"]}]
+      },
+      "properties": {
+        "enter": {
+          "y": {"scale": "cat", "field": "key"},
+          "height": {"scale": "cat", "band": true}
+        }
+      },
+      "scales": [
+        {
+          "name": "pos",
+          "type": "ordinal",
+          "range": "height",
+          "domain": {"field": "data.$nominal2$"}
+        }
+      ],
+      "marks": [
+        {
+          "type": "rect",
+          "properties": {
+            "enter": {
+              "y": {"scale": "pos", "field": "data.$nominal2$"},
+              "height": {"scale": "pos", "band": true},
+              "x": {"scale": "val", "field": "data.$numeric$"},
+              "x2": {"scale": "val", "value": 0},
+              "fill": {"scale": "color", "field": "data.$nominal2$"}
+            }
+          }
+        },
+        {
+          "type": "text",
+          "properties": {
+            "enter": {
+              "y": {"scale": "pos", "field": "data.$nominal2$"},
+              "dy": {"scale": "pos", "band": true, "mult": 0.5},
+              "x": {"scale": "val", "field": "data.$numeric$", "offset": -4},
+              "fill": {"value": "white"},
+              "align": {"value": "right"},
+              "baseline": {"value": "middle"},
+              "text": {"field": "data.$numeric$"}
+            }
+          }
+        }
+      ]
     }
   ]
 }

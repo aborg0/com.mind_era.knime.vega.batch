@@ -202,18 +202,20 @@ object Templates {
     }
   ]
 }""".trim
-  import ParameterKind._
-  
+
   private[this] val predefinedTemplates = Seq(
-      Template("Bar chart", BatchVegaViewerNodeModel.DEFAULT_VEGA_SPEC, Seq(ParameterType("$numeric$", NumericAny), ParameterType("$nominal$", OrdinalAny))),
+      Template("Bar chart", BatchVegaViewerNodeModel.DEFAULT_VEGA_SPEC, Seq(Parameter("$numeric$", ParameterKind.NumericAny, ""), Parameter("$nominal$", ParameterKind.OrdinalAny, "")))/*,
       Template("Arc", ARC, Seq()),
       Template("Area", AREA, Seq()),
-      Template("Grouped bar", GROUPED_BAR, Seq())
+      Template("Grouped bar", GROUPED_BAR, Seq())*/
       )
   private[this] val reg = Platform.getExtensionRegistry
   
   private[this] val contributedTemplates = for (
       template <- reg.getConfigurationElementsFor("com.mind_era.knime.vega.batch.vega_templates")
-      ) yield Template(template.getAttribute("name"), template.getChildren("text")(0).getValue, Seq())
+      ) yield Template(template.getAttribute("name"),
+          template.getChildren("text")(0).getValue.trim,
+          template.getChildren("parameter").map(
+              p=>Parameter(p.getAttribute("name"), ParameterKind.get(p.getAttribute("paramType")), p.getValue())).to[Seq])
   val template = LinkedHashMap((predefinedTemplates ++ contributedTemplates).map((t: Template)=>(t.name, t)):_*)
 }
