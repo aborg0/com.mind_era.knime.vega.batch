@@ -19,19 +19,36 @@
       </p>
       <p>
         To make it work, you should first set the paths of the Node.js
-        and
-        vega installation. (File/Preferences/KNIME/Vega Preferences) The
+        and vega installation. (File/Preferences/KNIME/Vega Preferences)
+        The
         <a href="https://github.com/aborg0/com.mind_era.knime.vega.batch">project's homepage</a>
         give instructions how to install these.
+      </p>
+      <p>
+        The besides the columns the shape, size, color and HiLite
+        information, also the row key (
+        <tt>KNIMEColor</tt>
+        <tt>KNIMESize</tt>
+        and
+        <tt>KNIMESizeFactor</tt>
+        ,
+        <tt>KNIMEColor</tt>
+        ,
+        <tt>KNIMEHiLited</tt>
+        ,
+        <tt>KNIMEShape</tt>
+        )
       </p>
     </intro>
 
 
-    <option name="Vega specification">The description of the diagram generation.
-      Please check the tutorial and the other documentation on the
+    <option name="Vega specification">
+      The description of the diagram generation.
+      Please check the
+      tutorial and the other documentation on the
       homepage for details.
       <p>
-      You can refer to the table in JSON fromat as $inputTable$.
+        You can refer to the table in JSON fromat as $inputTable$.
       </p>
     </option>
     <option name="Key-Replace">
@@ -41,14 +58,13 @@
       <tt>Replace</tt>
       ) replacement.
       Only the enabled pairs are applied. The pairs are
-      sorted to
-      descending order by their length to ease applying to the
-      longest
-      transformation first. Each replacement is performed on the
-      result
-      of the previous transformation.
+      sorted to descending order by their length to ease applying to the
+      longest transformation first. Each replacement is performed on the
+      result of the previous transformation.
     </option>
-    <option name="Image format">The output format. (PNG, or SVG if it is available)</option>
+    <option name="Image format">The output format. (PNG, or SVG if it is
+      available)
+    </option>
     <!-- possibly more options that can also be grouped by tabs -->
     <!-- <tab name="Standard Options"> <option name="short name of first 
       option (like in the dialog)">description of first option</option> <option 

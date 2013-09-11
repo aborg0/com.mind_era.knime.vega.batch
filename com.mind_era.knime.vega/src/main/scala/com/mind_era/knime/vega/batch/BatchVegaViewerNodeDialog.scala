@@ -76,7 +76,9 @@ class BatchVegaViewerNodeDialog protected[batch] () extends DefaultNodeSettingsP
   val mappingPairs = new DialogComponentPairs(
     createMappingSettings, "Key", "Replace", EnumSet.of(Columns.Add, Columns.Remove, Columns.Enable)) {
     override def rightSuggestions(spec: Array[PortObjectSpec]) = {
-      columnsFromSpec(spec, 0)
+      val ret = new ArrayList(Seq(ROWKEY, COLOR, HILITED, SIZE, SIZE_FACTOR, SHAPE).map(new StringCell(_)).asJava)
+      ret.addAll(columnsFromSpec(spec, 0))
+      ret
     }
     override def leftSuggestions(spec: Array[PortObjectSpec]) = {
       val arr = (new StringCell("$inputTable$") +: templateParameters.map(new StringCell(_))).toArray
