@@ -114,7 +114,7 @@ object BatchVegaViewerNodeModel {
 
   private[batch] final val CFGKEY_FORMAT = "image format"
   private[batch] final val SVG = "SVG"
-  private[batch] final val PNG = "png"
+  private[batch] final val PNG = "PNG"
   private[batch] final val svgSupported = BatchVegaViewerNodePlugin.getDefault.getBundle.getBundleContext.getBundles.exists(_.getSymbolicName == "org.knime.ext.svg")
   private[batch] final val POSSIBLE_FORMATS = if (svgSupported) Array(SVG, PNG) else Array(PNG)
 
@@ -386,7 +386,9 @@ class BatchVegaViewerNodeModel extends NodeModel(Array[PortType](BufferedDataTab
     } catch {
       case NonFatal(e) => {
         logger.info(sb.toString)
-        val errorMessage = sb.split('\n').filter(_.startsWith(VEGA_ERROR_PREFIX)).map(_.substring(VEGA_ERROR_PREFIX.length)).mkString("\n")
+        val errorMessage = if (sb.indexOf(VEGA_ERROR_PREFIX) >= 0) {
+          sb.substring(sb.toString.indexOf(VEGA_ERROR_PREFIX))
+        } else sb.toString
         throw new Exception(errorMessage, e)
       }
     }
