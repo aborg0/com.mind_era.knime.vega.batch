@@ -257,6 +257,115 @@ The column for the inner (coloured) split of values
 }
            </text>
          </template>
+         <template name="Population pyramid">
+           <parameter name="$value$" paramType="numeric/any">
+The column for the values (like number of people)
+           </parameter>
+           <parameter name="$binary$" paramType="categorical/any">
+The column for the group to two populations (like sex)
+           </parameter>
+           <parameter name="$split$" paramType="ordinal/any">
+The column for the split values (like age)
+           </parameter>
+           <text>
+{
+  "width": 700,
+  "height": 400,
+  "padding": {"top": 0, "left": 0, "bottom": 20, "right": 0},
+  "data": [
+    {
+      "name": "pop2000",
+      "url": "$inputTable$"
+    }
+  ],
+  "scales": [
+    {
+      "name": "g",
+      "domain": [0, 1],
+      "range": [340, 10]
+    },
+    {
+      "name": "y",
+      "type": "ordinal",
+      "range": "height",
+      "reverse": true,
+      "domain": {"data": "pop2000", "field": "data.$split$"}
+    },
+    {
+      "name": "c",
+      "type": "ordinal",
+      "domain": [1, 2],
+      "range": ["#1f77b4", "#e377c2"]
+    }
+  ],
+  "marks": [
+    {
+      "type": "text",
+      "interactive": false,
+      "from": {
+        "data": "pop2000",
+        "transform": [{"type":"unique", "field":"data.$split$", "as":"$split$"}]
+      },
+      "properties": {
+        "enter": {
+          "x": {"value": 325},
+          "y": {"scale": "y", "field": "$split$", "offset": 11},
+          "text": {"field": "$split$"},
+          "baseline": {"value": "middle"},
+          "align": {"value": "center"},
+          "fill": {"value": "#000"}
+        }
+      }
+    },
+    {
+      "type": "group",
+      "from": {
+        "data": "pop2000",
+        "transform": [
+          {"type":"facet", "keys":["data.$binary$"]}
+        ]
+      },
+      "properties": {
+        "update": {
+          "x": {"scale": "g", "field": "index"},
+          "y": {"value": 0},
+          "width": {"value": 300},
+          "height": {"group": "height"}
+        }
+      },
+      "scales": [
+        {
+          "name": "x",
+          "type": "linear",
+          "range": "width",
+          "reverse": {"field": "index"},
+          "nice": true,
+          "domain": {"data": "pop2000", "field": "data.$value$"}
+        }
+      ],
+      "axes": [
+        {"type": "x", "scale": "x", "format": "s"}
+      ],
+      "marks": [
+        {
+          "type": "rect",
+          "properties": {
+            "enter": {
+              "x": {"scale": "x", "field": "data.$value$"},
+              "x2": {"scale": "x", "value": 0},
+              "y": {"scale": "y", "field": "data.$split$"},
+              "height": {"scale": "y", "band": true, "offset": -1},
+              "fillOpacity": {"value": 0.6},
+              "fill": {"scale": "c", "field": "data.$binary$"}
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
+           </text>
+         </template>
    </extension>
    
 </plugin>
