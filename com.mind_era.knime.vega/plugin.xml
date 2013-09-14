@@ -366,6 +366,95 @@ The column for the split values (like age)
 }
            </text>
          </template>
+         <template name="Stacked area">
+           <parameter name="$x$" paramType="ordinal/any">
+The column for the x values (like time)
+           </parameter>
+           <parameter name="$y$" paramType="numeric/any">
+The column for the y values (like temperature, ...)
+           </parameter>
+           <parameter name="$color$" paramType="categorical/any">
+The column for the identifier of the groups (like city)
+           </parameter>
+           <text>
+{
+  "width": 500,
+  "height": 200,
+  "padding": {"top": 10, "left": 30, "bottom": 30, "right": 10},
+  "data": [
+    {
+      "name": "table",
+      "url": "$inputTable$"
+    },
+    {
+      "name": "stats",
+      "source": "table",
+      "transform": [
+        {"type": "facet", "keys": ["data.$x$"]},
+        {"type": "stats", "value": "data.$y$"}
+      ]
+    }
+  ],
+  "scales": [
+    {
+      "name": "x",
+      "type": "linear",
+      "range": "width",
+      "zero": false,
+      "domain": {"data": "table", "field": "data.$x$"}
+    },
+    {
+      "name": "y",
+      "type": "linear",
+      "range": "height",
+      "nice": true,
+      "domain": {"data": "stats", "field": "sum"}
+    },
+    {
+      "name": "color",
+      "type": "ordinal",
+      "range": "category10"
+    }
+  ],
+  "axes": [
+    {"type": "x", "scale": "x"},
+    {"type": "y", "scale": "y"}
+  ],
+  "marks": [
+    {
+      "type": "group",
+      "from": {
+        "data": "table",
+        "transform": [
+          {"type": "facet", "keys": ["data.$color$"]},
+          {"type": "stack", "point": "data.$x$", "height": "data.$y$"}
+        ]
+      },
+      "marks": [
+        {
+          "type": "area",
+          "properties": {
+            "enter": {
+              "interpolate": {"value": "monotone"},
+              "x": {"scale": "x", "field": "data.$x$"},
+              "y": {"scale": "y", "field": "y"},
+              "y2": {"scale": "y", "field": "y2"},
+              "fill": {"scale": "color", "field": "data.$color$"}
+            },
+            "update": {
+              "fillOpacity": {"value": 1}
+            },
+            "hover": {
+              "fillOpacity": {"value": 0.5}
+            }
+          }
+        }
+      ]
+    }    
+  ]
+}
+           </text>
+         </template>
    </extension>
    
 </plugin>
