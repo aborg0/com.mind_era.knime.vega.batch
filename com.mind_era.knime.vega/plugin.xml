@@ -41,6 +41,86 @@
    </extension>
    <extension
          point="com.mind_era.knime.vega.batch.vega_templates">
+         <template name="Custom">
+           <text>
+{
+  "width": «width in pixels, for example 400»,
+  "height": «height in pixels, for example 200»,
+  "data": [
+    {
+      "name": "table",
+      "url": "$inputTable$"
+    }
+  ],
+  "scales": [
+    {"name":"«id of scale»", "type":"«ordinal, linear or sqrt»", "range":"«width or height»", "domain":{"data":"table", "field":"data.«column name or mapping reference»"}}
+  ],
+  "axes": [
+    {"type":"x", "scale":"x"}
+  ],
+  "marks": [
+    {
+      "type": "«type figure to create»",
+      "from": {"data":"table"},
+      "properties": {
+        "enter": {
+          "x": {"scale":"x", "field":"data.«column or mapping reference»"},
+          "width": {"scale":"x", "band":true, "offset":-1},
+          "y": {"scale":"y", "field":"data.«other column or mapping reference»"},
+          "y2": {"scale":"y", "value":0}
+        },
+        "update": { "fill": {"value":"steelblue"} }
+      }
+    }
+  ]
+}
+           </text>
+         </template>
+         <template name="Bar">
+           <parameter paramType="numeric/any" name="$numeric$">
+The column to define bar size.
+           </parameter>
+           <parameter paramType="ordinal/any" name="$nominal$">
+The column which splits the data to columns.
+           </parameter>
+           <text>
+{
+  "width": 400,
+  "height": 200,
+  "padding": {"top": 10, "left": 30, "bottom": 20, "right": 10},
+  "data": [
+    {
+      "name": "table",
+      "url": "$inputTable$"
+    }
+  ],
+  "scales": [
+    {"name":"x", "type":"ordinal", "range":"width", "domain":{"data":"table", "field":"data.$nominal$"}},
+    {"name":"y", "range":"height", "nice":true, "domain":{"data":"table", "field":"data.$numeric$"}}
+  ],
+  "axes": [
+    {"type":"x", "scale":"x"},
+    {"type":"y", "scale":"y"}
+  ],
+  "marks": [
+    {
+      "type": "rect",
+      "from": {"data":"table"},
+      "properties": {
+        "enter": {
+          "x": {"scale":"x", "field":"data.$nominal$"},
+          "width": {"scale":"x", "band":true, "offset":-1},
+          "y": {"scale":"y", "field":"data.$numeric$"},
+          "y2": {"scale":"y", "value":0}
+        },
+        "update": { "fill": {"value":"steelblue"} },
+        "hover": { "fill": {"value":"red"} }
+      }
+    }
+  ]
+}
+           </text>
+         </template>
          <template name="Arc">
            <parameter paramType="numeric/real" name="$numeric$">
 The column where the pie sizes come from.
