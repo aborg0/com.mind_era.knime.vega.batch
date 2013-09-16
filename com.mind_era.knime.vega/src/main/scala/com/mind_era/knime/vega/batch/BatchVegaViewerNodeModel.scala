@@ -71,7 +71,8 @@ object BatchVegaViewerNodeModel {
 
   private[batch] final val CFGKEY_VEGA_SPEC = "Vega Specification"
 
-  private[batch] final val DEFAULT_VEGA_SPEC = """
+  private[batch] final val DEFAULT_VEGA_SPEC = ""
+  private[batch] final val DEFAULT_VEGA_SPEC_OLD = """
 {
   "width": 400,
   "height": 200,
@@ -120,6 +121,9 @@ object BatchVegaViewerNodeModel {
 
   private[batch] final val DEFAULT_FORMAT = POSSIBLE_FORMATS(0)
 
+  private[batch] final val CFGKEY_TEMPLATE = "template"
+  private[batch] final val DEFAULT_TEMPLATE: String = Templates.template.head._1
+
   private[batch] final val VEGA_ERROR_PREFIX = "[Vega Err] "
 
   //Helper methods to create the [SettingsModel]s
@@ -132,6 +136,9 @@ object BatchVegaViewerNodeModel {
 
   protected[batch] def createFormatSettings: SettingsModelString =
     new SettingsModelString(CFGKEY_FORMAT, DEFAULT_FORMAT)
+
+  protected[batch] def createTemplateSettings: SettingsModelString =
+    new SettingsModelString(CFGKEY_TEMPLATE, DEFAULT_TEMPLATE)
 
   protected[batch] final val ROWKEY = "KNIMERowKey"
   protected[batch] final val COLOR = "KNIMEColor"
@@ -152,6 +159,7 @@ class BatchVegaViewerNodeModel extends NodeModel(Array[PortType](BufferedDataTab
   private[this] final val vegaSpecification = createVegaSettings
   private[this] final val mapping = createMappingSettings
   private[this] final val imageFormat = createFormatSettings
+  private[this] final val template = createTemplateSettings
 
   /**
    * @inheritdoc
@@ -274,6 +282,7 @@ class BatchVegaViewerNodeModel extends NodeModel(Array[PortType](BufferedDataTab
     vegaSpecification.saveSettingsTo(settings)
     mapping.saveSettingsTo(settings)
     imageFormat.saveSettingsTo(settings)
+    template.saveSettingsTo(settings)
 
   }
 
@@ -285,6 +294,11 @@ class BatchVegaViewerNodeModel extends NodeModel(Array[PortType](BufferedDataTab
     vegaSpecification.loadSettingsFrom(settings)
     mapping.loadSettingsFrom(settings)
     imageFormat.loadSettingsFrom(settings)
+    try {
+    	template.loadSettingsFrom(settings)
+    } catch {
+      case NonFatal(e) => template.setStringValue(DEFAULT_TEMPLATE)
+    }
   }
 
   /**
@@ -303,6 +317,11 @@ class BatchVegaViewerNodeModel extends NodeModel(Array[PortType](BufferedDataTab
     f.validateSettings(settings)
     if (f.getStringValue == SVG && !svgSupported) {
       throw new InvalidSettingsException("SVG is not supported, please install org.knime.ext.svg.")
+    }
+    val t = createTemplateSettings
+    //t.validateSettings(settings)
+    if (t.getStringValue != null && !Templates.template.get(t.getStringValue).isDefined) {
+      //throw new InvalidSettingsException("Unknown template: " + t.getStringValue)
     }
   }
 

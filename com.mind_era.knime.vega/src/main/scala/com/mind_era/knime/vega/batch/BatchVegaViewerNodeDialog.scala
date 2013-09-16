@@ -43,6 +43,9 @@ import java.util.Collection
 import java.util.ArrayList
 import java.util.Arrays
 import javax.swing.JComboBox
+import javax.swing.event.ChangeListener
+import javax.swing.event.ChangeEvent
+import javax.swing.JOptionPane
 
 /**
  * <code>NodeDialog</code> for the "BatchVegaViewer" Node.
@@ -60,14 +63,20 @@ import javax.swing.JComboBox
  * @author Gabor Bakos
  */
 class BatchVegaViewerNodeDialog protected[batch] () extends DefaultNodeSettingsPane {
-
+  private[this] var opening = true
   import BatchVegaViewerNodeModel._
   //TODO Check whether the MPS could be easily embedded here, maybe 3.0
   setHorizontalPlacement(true)
+  
+  val templateModel = createTemplateSettings
+  val templateSelector = new DialogComponentStringSelection(templateModel, "Template", Templates.template.map(_._1).asJavaCollection)
+  addDialogComponent(templateSelector)
+  addDialogComponent(new DialogComponentStringSelection(createFormatSettings, "Image format", POSSIBLE_FORMATS: _*))
+  closeCurrentGroup
 
   //TODO add preferencepage to collect templates.
   val component = new DialogComponentSyntaxText(
-    createVegaSettings, Some("Vega specification"), Templates.template.map(p=>(p._1, p._2.text)))
+    createVegaSettings, Some("Vega specification")/*, Templates.template.map(p=>(p._1, p._2.text))*/)
   addDialogComponent(component)
   component.textArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JAVASCRIPT)
   val ac = new AutoCompletion(createProvider)
@@ -97,6 +106,25 @@ class BatchVegaViewerNodeDialog protected[batch] () extends DefaultNodeSettingsP
 
   //mappingPairs.getComponentPanel.setPreferredSize(new Dimension(700, 200))
   mappingPairs.setPreferredSize(500, 150)
+  templateSelector.getModel.addChangeListener(new ChangeListener() {
+    def stateChanged(e: ChangeEvent): Unit = {
+      val template = Templates.template.get(templateModel.getStringValue)
+      template.fold()(t=> 
+        {
+          val templateSelected = templateModel.getStringValue
+          val newText:String = Templates.template.get(templateSelected).map(_.text).getOrElse(component.currentText)
+          if (!opening && component.currentText != newText) {
+            if (JOptionPane.showConfirmDialog(getPanel, s"Update text with template: ${templateSelected}?", "Apply template", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+              component.textArea.setText(newText)
+            }
+          }
+
+          mappingPairs.updateSuggestions(t.parameters.map(_.name))
+          
+        })
+      opening = false
+    }
+  })
   component.addTemlateChangeListener(new AbstractAction() {
     override def actionPerformed(e: ActionEvent): Unit = {
       val template = Templates.template.get(e.getSource().asInstanceOf[JComboBox[_]].getSelectedItem().asInstanceOf[String])
@@ -104,8 +132,6 @@ class BatchVegaViewerNodeDialog protected[batch] () extends DefaultNodeSettingsP
     }
   })
   addDialogComponent(mappingPairs)
-  closeCurrentGroup
-  addDialogComponent(new DialogComponentStringSelection(createFormatSettings, "Image format", POSSIBLE_FORMATS: _*))
 
   //  val server = new Server //(9999)
   //  val connector = new SelectChannelConnector()

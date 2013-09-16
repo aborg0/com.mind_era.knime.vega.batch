@@ -27,7 +27,7 @@ class DialogComponentSyntaxText(model: SettingsModelString, title: Option[String
   val textArea = new _root_.org.fife.ui.rsyntaxtextarea.RSyntaxTextArea(11, 80)
   private[this] val scroll = new RTextScrollPane(textArea)
   title.fold()(t => scroll.setBorder(new TitledBorder(t)))
-  val combo = new JComboBox[String]()
+  private[this] val combo = new JComboBox[String]()
   if (templates.isEmpty) {
 	  getComponentPanel.add(scroll)
   } else {
@@ -55,6 +55,9 @@ class DialogComponentSyntaxText(model: SettingsModelString, title: Option[String
   def setToolTipText(tooltip: String): Unit = textArea.setToolTipText(tooltip)
   protected /*[package defaultnodesettings]*/ def updateComponent: Unit = textArea.setText(model.getStringValue)
   protected /*[package defaultnodesettings]*/ def validateSettingsBeforeSave: Unit = {model.setStringValue(textArea.getText)}
+  def currentText = textArea.getText
+  
+  def modelString:SettingsModelString = model
   
   def addTemlateChangeListener(listener: ActionListener) {
     combo.addActionListener(listener)
