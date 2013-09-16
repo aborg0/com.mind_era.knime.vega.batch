@@ -108,6 +108,7 @@ class BatchVegaViewerNodeDialog protected[batch] () extends DefaultNodeSettingsP
 
   //mappingPairs.getComponentPanel.setPreferredSize(new Dimension(700, 200))
   mappingPairs.setPreferredSize(500, 150)
+  import language.reflectiveCalls
   templateSelector.getModel.addChangeListener(new ChangeListener() {
     def stateChanged(e: ChangeEvent): Unit = {
       val template = Templates.template.get(templateModel.getStringValue)
