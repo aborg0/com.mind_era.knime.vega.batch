@@ -79,7 +79,9 @@ class BatchVegaViewerNodeDialog protected[batch] () extends DefaultNodeSettingsP
     createVegaSettings, Some("Vega specification")/*, Templates.template.map(p=>(p._1, p._2.text))*/)
   addDialogComponent(component)
   component.textArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JAVASCRIPT)
-  val ac = new AutoCompletion(createProvider)
+  val ac = new AutoCompletion(createProvider(
+    parameterNames(templateModel)
+    ))
   ac.install(component.textArea)
 
   val mappingPairs = new DialogComponentPairs(
@@ -112,7 +114,8 @@ class BatchVegaViewerNodeDialog protected[batch] () extends DefaultNodeSettingsP
       template.fold()(t=> 
         {
           val templateSelected = templateModel.getStringValue
-          val newText:String = Templates.template.get(templateSelected).map(_.text).getOrElse(component.currentText)
+          val selected = Templates.template.get(templateSelected)
+          val newText:String = selected.map(_.text).getOrElse(component.currentText)
           if (!opening && component.currentText != newText) {
             if (JOptionPane.showConfirmDialog(getPanel, s"Update text with template: ${templateSelected}?", "Apply template", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
               component.textArea.setText(newText)
@@ -120,7 +123,7 @@ class BatchVegaViewerNodeDialog protected[batch] () extends DefaultNodeSettingsP
           }
 
           mappingPairs.updateSuggestions(t.parameters.map(_.name))
-          
+          ac.setCompletionProvider(createProvider(parameterNames(templateModel)))
         })
       opening = false
     }
@@ -173,13 +176,21 @@ class BatchVegaViewerNodeDialog protected[batch] () extends DefaultNodeSettingsP
 
   override def closeOnESC = false
 
-  def createProvider = {
+  def createProvider(colNames: Seq[String]) = {
     val ret = new DefaultCompletionProvider
     for (mark <- Seq("rect", "symbol", "path", "arc", "area", "line", "image", "text", "group")) {
       ret.addCompletion(new BasicCompletion(ret, '"' + mark + '"'))
     }
+    for (col <- colNames) {
+      ret.addCompletion(new BasicCompletion(ret, s""""data.$col""""))
+    }
     for (mark <- Seq(ROWKEY, COLOR, SHAPE, SIZE_FACTOR, HILITED))
       ret.addCompletion(new BasicCompletion(ret, mark))
     ret
+  }
+
+  def parameterNames(templateModel: SettingsModelString): Seq[String] = {
+    for (template <-Templates.template.get(templateModel.getStringValue).toList;
+      parameter <- template.parameters) yield parameter.name
   }
 }
