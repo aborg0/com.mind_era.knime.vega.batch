@@ -27,15 +27,15 @@
       <p>
         The besides the columns the shape, size, color and HiLite
         information, also the row key (
+        <tt>KNIMERowKey</tt>
+        ), color (
         <tt>KNIMEColor</tt>
-        <tt>KNIMESize</tt>
-        and
+        ), size (
         <tt>KNIMESizeFactor</tt>
-        ,
-        <tt>KNIMEColor</tt>
-        ,
+        ), hilited (
         <tt>KNIMEHiLited</tt>
-        ,
+        , true or false)
+        , shape (
         <tt>KNIMEShape</tt>
         )
       </p>

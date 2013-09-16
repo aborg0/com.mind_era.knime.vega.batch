@@ -76,7 +76,7 @@ class BatchVegaViewerNodeDialog protected[batch] () extends DefaultNodeSettingsP
   val mappingPairs = new DialogComponentPairs(
     createMappingSettings, "Key", "Replace", EnumSet.of(Columns.Add, Columns.Remove, Columns.Enable)) {
     override def rightSuggestions(spec: Array[PortObjectSpec]) = {
-      val ret = new ArrayList(Seq(ROWKEY, COLOR, HILITED, SIZE, SIZE_FACTOR, SHAPE).map(new StringCell(_)).asJava)
+      val ret = new ArrayList(Seq(ROWKEY, COLOR, HILITED,  SIZE_FACTOR, SHAPE).map(new StringCell(_)).asJava)
       ret.addAll(columnsFromSpec(spec, 0))
       ret
     }
@@ -152,7 +152,7 @@ class BatchVegaViewerNodeDialog protected[batch] () extends DefaultNodeSettingsP
     for (mark <- Seq("rect", "symbol", "path", "arc", "area", "line", "image", "text", "group")) {
       ret.addCompletion(new BasicCompletion(ret, '"' + mark + '"'))
     }
-    for (mark <- Seq(ROWKEY, COLOR, SHAPE, SIZE, SIZE_FACTOR, HILITED))
+    for (mark <- Seq(ROWKEY, COLOR, SHAPE, SIZE_FACTOR, HILITED))
       ret.addCompletion(new BasicCompletion(ret, mark))
     ret
   }
