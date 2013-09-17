@@ -20,7 +20,8 @@ Require-Bundle: org.eclipse.core.runtime,
  javax.servlet,
  org.knime.ext.svg;bundle-version="[2.8.0,3.0.0)";resolution:=optional,
  com.mind_era.knime.util;bundle-version="0.0.1",
- org.fife.rsyntaxtextarea;bundle-version="2.0.4"
+ org.fife.rsyntaxtextarea;bundle-version="2.0.4",
+ org.eclipse.help.ui;bundle-version="3.5.101";resolution:=optional
 Bundle-ActivationPolicy: lazy
 Export-Package: com.mind_era.knime.vega.batch
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
