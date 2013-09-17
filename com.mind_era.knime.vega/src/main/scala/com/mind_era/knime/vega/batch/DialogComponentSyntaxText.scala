@@ -29,7 +29,8 @@ class DialogComponentSyntaxText(model: SettingsModelString, title: Option[String
   title.fold()(t => scroll.setBorder(new TitledBorder(t)))
   private[this] val combo = new JComboBox[String]()
   if (templates.isEmpty) {
-	  getComponentPanel.add(scroll)
+      getComponentPanel.setLayout(new BorderLayout)
+	  getComponentPanel.add(scroll, BorderLayout.CENTER)
   } else {
     val panel = new JPanel(new BorderLayout)
     for (entry <- templates) {

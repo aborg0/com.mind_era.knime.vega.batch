@@ -1,0 +1,6 @@
+[submodule "com.mind_era.knime.vega/src/main/js/vega"]
+	path = com.mind_era.knime.vega/src/main/js/vega
+	url = https://github.com/trifacta/vega.git
+[submodule "com.mind_era.knime.vega/src/main/js/d3"]
+	path = com.mind_era.knime.vega/src/main/js/d3
+	url = https://github.com/mbostock/d3.git

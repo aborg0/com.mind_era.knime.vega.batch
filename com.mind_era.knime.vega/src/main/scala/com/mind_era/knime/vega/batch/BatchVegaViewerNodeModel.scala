@@ -60,6 +60,7 @@ import com.mind_era.knime.util.SettingsModelPairs
 import java.util.Collections
 import org.knime.core.node.port.PortObjectSpec
 import scala.compat.Platform
+import org.knime.core.node.property.hilite.HiLiteHandler
 
 /**
  * Companion object for BatchVegaViewerNodeModel.
@@ -145,6 +146,54 @@ object BatchVegaViewerNodeModel {
   protected[batch] final val SHAPE = "KNIMEShape"
   protected[batch] final val SIZE_FACTOR = "KNIMESizeFactor"
   protected[batch] final val HILITED = "KNIMEHiLited"
+
+  @throws[IOException]
+  private[batch] def generateJSONTable(data: BufferedDataTable, hiLiteHandler: HiLiteHandler) = {
+    val jsonFactory = new JsonFactory;
+    val tempFile = FileUtil.createTempFile("data", ".json", true)
+    val spec = data.getSpec
+    val gen = jsonFactory.createJsonGenerator(tempFile, JsonEncoding.UTF8)
+    try {
+      val processingFunctions = createProcessingFunctions(spec, gen)
+      val hiLitedKeys = hiLiteHandler.getHiLitKeys()
+      gen.writeStartArray
+      for (row <- data.asScala) {
+        gen.writeStartObject
+        for (colIndex <- 0 until spec.getNumColumns) {
+          processingFunctions(colIndex)(row.getCell(colIndex))
+        }
+        gen.writeStringField(ROWKEY, row.getKey.getString)
+        val hiLited = hiLitedKeys.contains(row.getKey)
+        gen.writeStringField(COLOR, "#" + Integer.toHexString(data.getSpec.getRowColor(row).getColor(false, hiLited).getRGB))
+        gen.writeStringField(SHAPE, data.getSpec.getRowShape(row).toString)
+        gen.writeNumberField(SIZE_FACTOR, data.getSpec.getRowSizeFactor(row))
+        gen.writeBooleanField(HILITED, hiLited)
+        gen.writeEndObject
+      }
+      gen.writeEndArray
+      Some(tempFile)
+    } finally {
+      gen.close
+    }
+  }
+
+  private[this] def createProcessingFunctions(spec: DataTableSpec, gen: JsonGenerator): Int => DataCell => Unit = {
+    def processingFunction(idx: Int, name: String, dataType: DataType): (Int, DataCell => Unit) = {
+      val partialFunction: PartialFunction[DataCell, Unit] = new PartialFunction[DataCell, Unit] {
+        override def isDefinedAt(cell: DataCell) = cell.isMissing
+        override def apply(cell: DataCell) = gen.writeFieldName(name)
+      }
+      (idx, if (dataType.isCompatible(classOf[DoubleValue])) {
+        partialFunction.orElse(PartialFunction((cell: DataCell) => gen.writeNumberField(name, cell.asInstanceOf[DoubleValue].getDoubleValue)))
+      } else if (dataType.isCompatible(classOf[StringValue])) {
+        partialFunction.orElse(PartialFunction((cell: DataCell) => gen.writeStringField(name, cell.asInstanceOf[StringValue].getStringValue)))
+      } else {
+        (cell: DataCell) => ()
+      })
+    }
+    (for ((col, idx) <- spec.asScala.zipWithIndex) yield processingFunction(idx, col.getName, col.getType)).toMap
+  }
+
 }
 
 /**
@@ -168,7 +217,7 @@ class BatchVegaViewerNodeModel extends NodeModel(Array[PortType](BufferedDataTab
   protected override def execute(inData: Array[PortObject],
     exec: ExecutionContext): Array[PortObject] = {
     val tempFile = inData match {
-      case Array(data: BufferedDataTable) => generateJSONTable(data)
+      case Array(data: BufferedDataTable) => generateJSONTable(data, getInHiLiteHandler(0))
       case _ => None
     }
     val resultFile = try {
@@ -199,52 +248,6 @@ class BatchVegaViewerNodeModel extends NodeModel(Array[PortType](BufferedDataTab
       resultFile.delete
     }
     Array[PortObject](new ImagePortObject(content, new ImagePortObjectSpec(dataType)))
-  }
-
-  @throws[IOException]
-  private[this] def generateJSONTable(data: BufferedDataTable) = {
-    val jsonFactory = new JsonFactory;
-    val tempFile = FileUtil.createTempFile("data", ".json", true)
-    val spec = data.getSpec
-    val gen = jsonFactory.createJsonGenerator(tempFile, JsonEncoding.UTF8)
-    try {
-      val processingFunctions = createProcessingFunctions(spec, gen)
-      gen.writeStartArray
-      for (row <- data.asScala) {
-        gen.writeStartObject
-        for (colIndex <- 0 until spec.getNumColumns) {
-          processingFunctions(colIndex)(row.getCell(colIndex))
-        }
-        gen.writeStringField(ROWKEY, row.getKey.getString)
-        val hiLited = getInHiLiteHandler(0).getHiLitKeys().contains(row.getKey)
-        gen.writeStringField(COLOR, "#" + Integer.toHexString(data.getSpec.getRowColor(row).getColor(false, hiLited).getRGB))
-        gen.writeStringField(SHAPE, data.getSpec.getRowShape(row).toString)
-        gen.writeNumberField(SIZE_FACTOR, data.getSpec.getRowSizeFactor(row))
-        gen.writeBooleanField(HILITED, hiLited)
-        gen.writeEndObject
-      }
-      gen.writeEndArray
-      Some(tempFile)
-    } finally {
-      gen.close
-    }
-  }
-
-  private[this] def createProcessingFunctions(spec: DataTableSpec, gen: JsonGenerator): Int => DataCell => Unit = {
-    def processingFunction(idx: Int, name: String, dataType: DataType): (Int, DataCell => Unit) = {
-      val partialFunction: PartialFunction[DataCell, Unit] = new PartialFunction[DataCell, Unit] {
-        override def isDefinedAt(cell: DataCell) = cell.isMissing
-        override def apply(cell: DataCell) = gen.writeFieldName(name)
-      }
-      (idx, if (dataType.isCompatible(classOf[DoubleValue])) {
-        partialFunction.orElse(PartialFunction((cell: DataCell) => gen.writeNumberField(name, cell.asInstanceOf[DoubleValue].getDoubleValue)))
-      } else if (dataType.isCompatible(classOf[StringValue])) {
-        partialFunction.orElse(PartialFunction((cell: DataCell) => gen.writeStringField(name, cell.asInstanceOf[StringValue].getStringValue)))
-      } else {
-        (cell: DataCell) => ()
-      })
-    }
-    (for ((col, idx) <- spec.asScala.zipWithIndex) yield processingFunction(idx, col.getName, col.getType)).toMap
   }
 
   /**
@@ -295,7 +298,7 @@ class BatchVegaViewerNodeModel extends NodeModel(Array[PortType](BufferedDataTab
     mapping.loadSettingsFrom(settings)
     imageFormat.loadSettingsFrom(settings)
     try {
-    	template.loadSettingsFrom(settings)
+      template.loadSettingsFrom(settings)
     } catch {
       case NonFatal(e) => template.setStringValue(DEFAULT_TEMPLATE)
     }

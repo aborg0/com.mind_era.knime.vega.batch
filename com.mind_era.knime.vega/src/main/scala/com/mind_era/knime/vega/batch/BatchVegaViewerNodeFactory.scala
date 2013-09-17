@@ -39,6 +39,6 @@ class BatchVegaViewerNodeFactory
   /**
    * @inheritdoc
    */
-  override def createNodeDialogPane: NodeDialogPane = new BatchVegaViewerNodeDialog
+  override def createNodeDialogPane: NodeDialogPane = new BatchVegaViewerNodeDataAwareDialog
 }
 
