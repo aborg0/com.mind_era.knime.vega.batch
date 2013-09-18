@@ -4,3 +4,6 @@
 [submodule "com.mind_era.knime.vega/src/main/js/d3"]
 	path = com.mind_era.knime.vega/src/main/js/d3
 	url = https://github.com/mbostock/d3.git
+[submodule "roles"]
+	path = roles
+	url = https://github.com/aborg0/com.mind_era.knime.roles.git
