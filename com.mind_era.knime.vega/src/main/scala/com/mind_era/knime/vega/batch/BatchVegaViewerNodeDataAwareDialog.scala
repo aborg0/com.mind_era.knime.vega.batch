@@ -94,14 +94,17 @@ class BatchVegaViewerNodeDataAwareDialog extends DataAwareNodeDialogPane {
     }
   }
   val specText = new DialogComponentSyntaxText(
-      createVegaSettings, Some("Vega specification") /*, Templates.template.map(p=>(p._1, p._2.text))*/ )
+    createVegaSettings, Some("Vega specification") /*, Templates.template.map(p=>(p._1, p._2.text))*/ )
   private[this] val server = new Server //(9999)
   private[this] val tempDir = FileUtil.createTempDir("vegaData")
   private[this] var inputFile: Option[File] = null
 
+  private def writeSpec(): Unit =
+    BatchVegaViewerNodeModel.writeSpec(Some("data.json"), new File(tempDir, "spec.json"), specText.textArea.getText, mappingPairs.getModel().asInstanceOf[SettingsModelPairs[StringCell, StringCell]])
+
   {
     val panel = getPanel
-    val gl = new GridLayout(1,3)
+    val gl = new GridLayout(1, 4)
     gl.setHgap(15)
     val smallPanel = new JPanel(gl)
 
@@ -109,32 +112,20 @@ class BatchVegaViewerNodeDataAwareDialog extends DataAwareNodeDialogPane {
     panel.add(smallPanel, BorderLayout.NORTH)
     smallPanel.add(templateSelector.getComponentPanel)
     smallPanel.add(format.getComponentPanel)
-    val previewButton = new JButton(new AbstractAction("Preview") {
+    val previewButton = new JButton(new AbstractAction("Preview - http://localhost:9999/show.html") {
+      val browser = PlatformUI.getWorkbench.getBrowserSupport.createBrowser("VegaViewer")
       override def actionPerformed(e: ActionEvent): Unit = {
-//	        val window = new Display
-//        val shell = new Shell(window)
-//        shell.setLayout(new FillLayout)
-//        window.asyncExec(new Runnable() {
-//          override def run(): Unit = {
-//          }
-//        })
-        writeSpec(Some("data.json"), new File(tempDir, "spec.json"), specText.textArea.getText, mappingPairs.getModel().asInstanceOf[SettingsModelPairs[StringCell, StringCell]])
-        PlatformUI.getWorkbench.getBrowserSupport.createBrowser("VegaViewer").openURL(new URL("http://localhost:9999/show.html"))
-//        val browser = new Browser(shell, SWT.MOZILLA)
-//	        browser.setJavascriptEnabled(true)
-//	        browser.setSize(800, 600)
-//	        shell.pack
-//	        shell.open
-//	        //browser.setUrl("http://trifacta.github.com/vega/editor")
-//	        browser.setUrl("http://localhost:9999/html/show.html")
-//	        //browser.setUrl("http://localhost:9999/js/vega/examples/editor/index.html")
-//	        while (!shell.isDisposed) {
-//	        	if (!window.readAndDispatch) window.sleep
-//	        }
-//	        window.close
+        writeSpec()
+        browser.openURL(new URL("http://localhost:9999/show.html"))
+      }
+    })
+    val updatePreviewButton = new JButton(new AbstractAction("Update preview") {
+      override def actionPerformed(e: ActionEvent): Unit = {
+        writeSpec()
       }
     })
     smallPanel.add(previewButton)
+    smallPanel.add(updatePreviewButton)
     val split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT)
     panel.add(split, BorderLayout.CENTER)
     split.add(specText.getComponentPanel)
@@ -190,7 +181,7 @@ class BatchVegaViewerNodeDataAwareDialog extends DataAwareNodeDialogPane {
   }
 
   @throws[NotConfigurableException]
-  protected override def loadSettingsFrom(settings: NodeSettingsRO, 
+  protected override def loadSettingsFrom(settings: NodeSettingsRO,
     input: Array[PortObject]): Unit = {
     val specs = input.map(po => if (po == null) null else po.getSpec)
     templateSelector.loadSettingsFrom(settings, specs)
@@ -208,7 +199,7 @@ class BatchVegaViewerNodeDataAwareDialog extends DataAwareNodeDialogPane {
     val connector = new SelectChannelConnector()
     connector.setPort(9999)
     server.addConnector(connector)
-  
+
     val contextHandler = new ContextHandler
     contextHandler.setClassLoader(Thread.currentThread().getContextClassLoader())
     contextHandler.setContextPath("/lib")
@@ -216,10 +207,10 @@ class BatchVegaViewerNodeDataAwareDialog extends DataAwareNodeDialogPane {
     val resourceHandler = new ResourceHandler
     //resourceHandler.setDirectoriesListed(true)
     //resourceHandler.setWelcomeFiles(Array[String]("index.html"))
-  
+
     val bundle = BatchVegaViewerNodePlugin.getDefault.getBundle
-    
-    val commonUrl = new File(FileLocator.toFileURL(FileLocator.find(bundle, new Path("src/main/js"), null)).toURI)//bundle.getDataFile("src/main/js")
+
+    val commonUrl = new File(FileLocator.toFileURL(FileLocator.find(bundle, new Path("src/main/js"), null)).toURI) //bundle.getDataFile("src/main/js")
     contextHandler.setResourceBase(commonUrl.toString())
     val content = s"""<!DOCTYPE HTML>
 <html>
@@ -244,12 +235,12 @@ parse("spec.json");
     FileUtils.writeStringToFile(new File(tempDir, "show.html"), content)
     //FileUtils.writeStringToFile(new File(tempDir, "spec.json"), specText.textArea.getText)
     resourceHandler.setResourceBase(tempDir.toString)
-  
+
     val handlers = new HandlerList()
     val rh: Handler = resourceHandler
     handlers.setHandlers(Array[Handler](contextHandler, rh, new DefaultHandler(): Handler));
     server.setHandler(handlers)
-  
+
     server.start
     //server.join()
   }
@@ -261,7 +252,7 @@ parse("spec.json");
     server.removeConnector(connector)
     server.stop
     assert(tempDir != null)
-//    FileUtil.deleteRecursively(tempDir)
+    //    FileUtil.deleteRecursively(tempDir)
   }
   override def closeOnESC = false
 
@@ -277,7 +268,7 @@ parse("spec.json");
       ret.addCompletion(new BasicCompletion(ret, mark))
     val replacement = s""""values":{
         {
-          ${(for (_<- 1 to 5) yield "{" + (for (colName<- colNames) yield '"' + colName + "\": ").mkString(", ")+ " }").mkString(",\n          ")}
+          ${(for (_ <- 1 to 5) yield "{" + (for (colName <- colNames) yield '"' + colName + "\": ").mkString(", ") + " }").mkString(",\n          ")}
         }
       }
 """
