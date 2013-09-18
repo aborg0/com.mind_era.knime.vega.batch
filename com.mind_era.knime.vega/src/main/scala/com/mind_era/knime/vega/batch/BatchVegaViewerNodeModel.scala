@@ -148,14 +148,12 @@ object BatchVegaViewerNodeModel {
   protected[batch] final val HILITED = "KNIMEHiLited"
 
   @throws[IOException]
-  private[batch] def generateJSONTable(data: BufferedDataTable, hiLiteHandler: HiLiteHandler) = {
+  private[batch] def generateJSONTable(data: BufferedDataTable, hiLitedKeys: java.util.Set[org.knime.core.data.RowKey], tempFile: File = FileUtil.createTempFile("data", ".json", true)) = {
     val jsonFactory = new JsonFactory;
-    val tempFile = FileUtil.createTempFile("data", ".json", true)
     val spec = data.getSpec
     val gen = jsonFactory.createJsonGenerator(tempFile, JsonEncoding.UTF8)
     try {
       val processingFunctions = createProcessingFunctions(spec, gen)
-      val hiLitedKeys = hiLiteHandler.getHiLitKeys()
       gen.writeStartArray
       for (row <- data.asScala) {
         gen.writeStartObject
@@ -194,6 +192,25 @@ object BatchVegaViewerNodeModel {
     (for ((col, idx) <- spec.asScala.zipWithIndex) yield processingFunction(idx, col.getName, col.getType)).toMap
   }
 
+  @throws[IOException]
+  private[batch] def writeSpec(tempFile: Option[String], specFile: File, rawSpecText: String, mapping: SettingsModelPairs[StringCell, StringCell]): Unit = {
+    val writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(specFile), "UTF-8"))
+    try {
+      val pattern = Pattern.compile("$inputTable$", Pattern.LITERAL)
+      val specText = tempFile.fold(rawSpecText)(file => replacePairs(pattern.matcher(rawSpecText).replaceAll(file.replaceFirst("file:/", "file://")), mapping))
+      writer.write(specText)
+    } finally {
+      writer.close
+    }
+  }
+
+  private[this] def replacePairs(spec: String, mapping: SettingsModelPairs[StringCell, StringCell]) = {
+    mapping.getEnabledPairs().asScala.to[Vector].sortBy(-_.getFirst.getStringValue.length).foldLeft(spec)((spec, pair) => {
+      val pattern = Pattern.compile(pair.getFirst.getStringValue, Pattern.LITERAL)
+      pattern.matcher(spec).replaceAll(pair.getSecond.getStringValue)
+    })
+  }
+
 }
 
 /**
@@ -217,7 +234,7 @@ class BatchVegaViewerNodeModel extends NodeModel(Array[PortType](BufferedDataTab
   protected override def execute(inData: Array[PortObject],
     exec: ExecutionContext): Array[PortObject] = {
     val tempFile = inData match {
-      case Array(data: BufferedDataTable) => generateJSONTable(data, getInHiLiteHandler(0))
+      case Array(data: BufferedDataTable) => generateJSONTable(data, getInHiLiteHandler(0).getHiLitKeys)
       case _ => None
     }
     val resultFile = try {

@@ -57,6 +57,11 @@ import org.eclipse.core.runtime.FileLocator
 import org.knime.core.util.FileUtil
 import java.io.File
 import org.apache.commons.io.FileUtils
+import org.mortbay.jetty.handler.ContextHandler
+import org.knime.core.node.BufferedDataTable
+import java.util.Collections
+import org.knime.core.data.RowKey
+import com.mind_era.knime.util.SettingsModelPairs
 
 /**
  * @author Gabor Bakos
@@ -91,7 +96,8 @@ class BatchVegaViewerNodeDataAwareDialog extends DataAwareNodeDialogPane {
   val specText = new DialogComponentSyntaxText(
       createVegaSettings, Some("Vega specification") /*, Templates.template.map(p=>(p._1, p._2.text))*/ )
   private[this] val server = new Server //(9999)
-  private[this] var tempDir: File = null
+  private[this] val tempDir = FileUtil.createTempDir("vegaData")
+  private[this] var inputFile: Option[File] = null
 
   {
     val panel = getPanel
@@ -112,7 +118,8 @@ class BatchVegaViewerNodeDataAwareDialog extends DataAwareNodeDialogPane {
 //          override def run(): Unit = {
 //          }
 //        })
-        PlatformUI.getWorkbench.getBrowserSupport.createBrowser("VegaViewer").openURL(new URL("http://localhost:9999/html/show.html"))
+        writeSpec(Some("data.json"), new File(tempDir, "spec.json"), specText.textArea.getText, mappingPairs.getModel().asInstanceOf[SettingsModelPairs[StringCell, StringCell]])
+        PlatformUI.getWorkbench.getBrowserSupport.createBrowser("VegaViewer").openURL(new URL("http://localhost:9999/show.html"))
 //        val browser = new Browser(shell, SWT.MOZILLA)
 //	        browser.setJavascriptEnabled(true)
 //	        browser.setSize(800, 600)
@@ -190,6 +197,10 @@ class BatchVegaViewerNodeDataAwareDialog extends DataAwareNodeDialogPane {
     format.loadSettingsFrom(settings, specs)
     mappingPairs.loadSettingsFrom(settings, specs)
     specText.loadSettingsFrom(settings, specs)
+    inputFile = input match {
+      case Array(dt: BufferedDataTable) => BatchVegaViewerNodeModel.generateJSONTable(dt, Collections.emptySet[RowKey], new File(tempDir, "data.json"))
+      case _ => None
+    }
   }
 
   override def onOpen: Unit = {
@@ -198,20 +209,24 @@ class BatchVegaViewerNodeDataAwareDialog extends DataAwareNodeDialogPane {
     connector.setPort(9999)
     server.addConnector(connector)
   
-    val resourceHandler = new ResourceHandler()
+    val contextHandler = new ContextHandler
+    contextHandler.setClassLoader(Thread.currentThread().getContextClassLoader())
+    contextHandler.setContextPath("/lib")
+    contextHandler.setHandler(new ResourceHandler)
+    val resourceHandler = new ResourceHandler
     //resourceHandler.setDirectoriesListed(true)
     //resourceHandler.setWelcomeFiles(Array[String]("index.html"))
   
     val bundle = BatchVegaViewerNodePlugin.getDefault.getBundle
     
-    val commonUrl = bundle.getDataFile("src/main/js")
-    tempDir = FileUtil.createTempDir("vegaData")
+    val commonUrl = new File(FileLocator.toFileURL(FileLocator.find(bundle, new Path("src/main/js"), null)).toURI)//bundle.getDataFile("src/main/js")
+    contextHandler.setResourceBase(commonUrl.toString())
     val content = s"""<!DOCTYPE HTML>
 <html>
   <head>
     <title>Vega Preview</title>
-    <script src="${new File(commonUrl, "d3/d3.min.js").toString}"></script>
-    <script src="${new File(commonUrl, "vega/vega.min.js").toString}"></script>
+    <script src="lib/d3/d3.min.js"></script>
+    <script src="lib/vega/vega.min.js"></script>
   </head>
   <body>
     <div id="vis"></div>
@@ -222,16 +237,17 @@ function parse(spec) {
   vg.parse.spec(spec, function(chart) { chart({el:"#vis"}).update(); });
 }
 //parse("file://C:/Users/Gábor/tmp/eclipse_knime_2.8.0_2013/workspace/com.mind_era.knime.vega/src/main/html/spec.json");
-//parse("spec.json");
-parse("http://trifacta.github.io/vega/data/jobs.json");
+parse("spec.json");
+//parse("http://trifacta.github.io/vega/data/jobs.json");
 </script>
 </html>"""
     FileUtils.writeStringToFile(new File(tempDir, "show.html"), content)
+    //FileUtils.writeStringToFile(new File(tempDir, "spec.json"), specText.textArea.getText)
     resourceHandler.setResourceBase(tempDir.toString)
   
     val handlers = new HandlerList()
     val rh: Handler = resourceHandler
-    handlers.setHandlers(Array[Handler](rh, new DefaultHandler(): Handler));
+    handlers.setHandlers(Array[Handler](contextHandler, rh, new DefaultHandler(): Handler));
     server.setHandler(handlers)
   
     server.start
@@ -245,7 +261,7 @@ parse("http://trifacta.github.io/vega/data/jobs.json");
     server.removeConnector(connector)
     server.stop
     assert(tempDir != null)
-    FileUtil.deleteRecursively(tempDir)
+//    FileUtil.deleteRecursively(tempDir)
   }
   override def closeOnESC = false
 
