@@ -46,6 +46,7 @@ import javax.swing.JComboBox
 import javax.swing.event.ChangeListener
 import javax.swing.event.ChangeEvent
 import javax.swing.JOptionPane
+import org.knime.core.node.defaultnodesettings.DialogComponentBoolean
 
 /**
  * <code>NodeDialog</code> for the "BatchVegaViewer" Node.
@@ -104,6 +105,9 @@ class BatchVegaViewerNodeDialog protected[batch] () extends DefaultNodeSettingsP
       templateParameters = parameters
       checkConfigurabilityBeforeLoad(getLastTableSpecs)
     }
+    
+    createNewTab("Advanced")
+    addDialogComponent(new DialogComponentBoolean(createOpenView, "Open view on execution"))
   }
 
   //mappingPairs.getComponentPanel.setPreferredSize(new Dimension(700, 200))

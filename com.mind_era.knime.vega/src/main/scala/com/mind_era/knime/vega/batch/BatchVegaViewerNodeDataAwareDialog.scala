@@ -56,12 +56,17 @@ import org.eclipse.core.runtime.Path
 import org.eclipse.core.runtime.FileLocator
 import org.knime.core.util.FileUtil
 import java.io.File
+import java.io.IOException
 import org.apache.commons.io.FileUtils
 import org.mortbay.jetty.handler.ContextHandler
 import org.knime.core.node.BufferedDataTable
 import java.util.Collections
 import org.knime.core.data.RowKey
 import com.mind_era.knime.util.SettingsModelPairs
+import javax.swing.JLabel
+import java.awt.FlowLayout
+import javax.swing.JCheckBox
+import org.knime.core.node.defaultnodesettings.DialogComponentBoolean
 
 /**
  * @author Gabor Bakos
@@ -73,6 +78,7 @@ class BatchVegaViewerNodeDataAwareDialog extends DataAwareNodeDialogPane {
   private[this] val templateModel = createTemplateSettings
   private[this] val templateSelector = new DialogComponentStringSelection(templateModel, "Template", Templates.template.map(_._1).asJavaCollection)
   private[this] val format = new DialogComponentStringSelection(createFormatSettings, "Image format", POSSIBLE_FORMATS: _*)
+  private[this] val openViews = new DialogComponentBoolean(createOpenView, "Open view on execution")
   val mappingPairs = new DialogComponentPairs(createMappingSettings, "Key", "Replace", EnumSet.of(Columns.Add, Columns.Remove, Columns.Enable)) {
     override def rightSuggestions(spec: Array[PortObjectSpec]) = {
       val ret = new ArrayList(Seq(ROWKEY, COLOR, HILITED, SIZE_FACTOR, SHAPE).map(new StringCell(_)).asJavaCollection)
@@ -103,7 +109,7 @@ class BatchVegaViewerNodeDataAwareDialog extends DataAwareNodeDialogPane {
     BatchVegaViewerNodeModel.writeSpec(Some("data.json"), new File(tempDir, "spec.json"), specText.textArea.getText, mappingPairs.getModel().asInstanceOf[SettingsModelPairs[StringCell, StringCell]])
 
   {
-    val panel = getPanel
+    val panel = new JPanel//getPanel
     val gl = new GridLayout(1, 4)
     gl.setHgap(15)
     val smallPanel = new JPanel(gl)
@@ -164,6 +170,14 @@ class BatchVegaViewerNodeDataAwareDialog extends DataAwareNodeDialogPane {
       }
     })
     split.add(mappingPairs.getComponentPanel)
+    this.addTab("configuration", panel)
+    this.addTab("Advanced", createAdvancedTab)
+  }
+
+  def createAdvancedTab: JPanel = {
+    val tab = new JPanel(new GridLayout(1, 1))
+    tab.add(openViews.getComponentPanel)
+    tab
   }
   //  component.addTemlateChangeListener(new AbstractAction() {
   //    override def actionPerformed(e: ActionEvent): Unit = {
@@ -178,6 +192,7 @@ class BatchVegaViewerNodeDataAwareDialog extends DataAwareNodeDialogPane {
     format.saveSettingsTo(settings)
     mappingPairs.saveSettingsTo(settings)
     specText.saveSettingsTo(settings)
+    openViews.saveSettingsTo(settings)
   }
 
   @throws[NotConfigurableException]
@@ -192,6 +207,7 @@ class BatchVegaViewerNodeDataAwareDialog extends DataAwareNodeDialogPane {
       case Array(dt: BufferedDataTable) => BatchVegaViewerNodeModel.generateJSONTable(dt, Collections.emptySet[RowKey], new File(tempDir, "data.json"))
       case _ => None
     }
+    openViews.loadSettingsFrom(settings, specs)
   }
 
   override def onOpen: Unit = {
@@ -212,27 +228,7 @@ class BatchVegaViewerNodeDataAwareDialog extends DataAwareNodeDialogPane {
 
     val commonUrl = new File(FileLocator.toFileURL(FileLocator.find(bundle, new Path("src/main/js"), null)).toURI) //bundle.getDataFile("src/main/js")
     contextHandler.setResourceBase(commonUrl.toString())
-    val content = s"""<!DOCTYPE HTML>
-<html>
-  <head>
-    <title>Vega Preview</title>
-    <script src="lib/d3/d3.min.js"></script>
-    <script src="lib/vega/vega.min.js"></script>
-  </head>
-  <body>
-    <div id="vis"></div>
-  </body>
-<script type="text/javascript">
-// parse a spec and create a visualization view
-function parse(spec) {
-  vg.parse.spec(spec, function(chart) { chart({el:"#vis"}).update(); });
-}
-//parse("file://C:/Users/Gábor/tmp/eclipse_knime_2.8.0_2013/workspace/com.mind_era.knime.vega/src/main/html/spec.json");
-parse("spec.json");
-//parse("http://trifacta.github.io/vega/data/jobs.json");
-</script>
-</html>"""
-    FileUtils.writeStringToFile(new File(tempDir, "show.html"), content)
+    BatchVegaViewerNodeDataAwareDialog.writeHTML(tempDir)
     //FileUtils.writeStringToFile(new File(tempDir, "spec.json"), specText.textArea.getText)
     resourceHandler.setResourceBase(tempDir.toString)
 
@@ -282,5 +278,28 @@ parse("spec.json");
       parameter <- template.parameters
     ) yield parameter.name
   }
-
+}
+object BatchVegaViewerNodeDataAwareDialog {
+  @throws[IOException]
+  private[batch] def writeHTML(tempDir: File, spec: String = "spec.json"): Unit = {
+    val content = s"""<!DOCTYPE HTML>
+<html>
+<head>
+<title>Vega Preview</title>
+<script src="lib/d3/d3.min.js"></script>
+<script src="lib/vega/vega.min.js"></script>
+</head>
+<body>
+<div id="vis"></div>
+</body>
+<script type="text/javascript">
+// parse a spec and create a visualization view
+function parse(spec) {
+vg.parse.spec(spec, function(chart) { chart({el:"#vis"}).update(); });
+}
+parse("$spec");
+</script>
+</html>"""
+    FileUtils.writeStringToFile(new File(tempDir, "show.html"), content)
+  }
 }

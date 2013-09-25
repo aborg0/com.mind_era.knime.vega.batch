@@ -61,6 +61,18 @@ import java.util.Collections
 import org.knime.core.node.port.PortObjectSpec
 import scala.compat.Platform
 import org.knime.core.node.property.hilite.HiLiteHandler
+import org.knime.core.node.defaultnodesettings.SettingsModelBoolean
+import scala.concurrent.Future
+import scala.concurrent.duration.Duration
+import scala.concurrent.duration.MINUTES
+import scala.concurrent.Await
+import org.mortbay.jetty.Server
+import org.mortbay.jetty.handler.ResourceHandler
+import org.mortbay.jetty.nio.SelectChannelConnector
+import org.mortbay.jetty.handler.ContextHandler
+import org.eclipse.core.runtime.FileLocator
+import org.eclipse.core.runtime.Path
+import org.eclipse.ui.PlatformUI
 
 /**
  * Companion object for BatchVegaViewerNodeModel.
@@ -73,42 +85,6 @@ object BatchVegaViewerNodeModel {
   private[batch] final val CFGKEY_VEGA_SPEC = "Vega Specification"
 
   private[batch] final val DEFAULT_VEGA_SPEC = ""
-  private[batch] final val DEFAULT_VEGA_SPEC_OLD = """
-{
-  "width": 400,
-  "height": 200,
-  "padding": {"top": 10, "left": 30, "bottom": 20, "right": 10},
-  "data": [
-    {
-      "name": "table",
-      "url": "$inputTable$"
-    }
-  ],
-  "scales": [
-    {"name":"x", "type":"ordinal", "range":"width", "domain":{"data":"table", "field":"data.$nominal$"}},
-    {"name":"y", "range":"height", "nice":true, "domain":{"data":"table", "field":"data.$numeric$"}}
-  ],
-  "axes": [
-    {"type":"x", "scale":"x"},
-    {"type":"y", "scale":"y"}
-  ],
-  "marks": [
-    {
-      "type": "rect",
-      "from": {"data":"table"},
-      "properties": {
-        "enter": {
-          "x": {"scale":"x", "field":"data.$nominal$"},
-          "width": {"scale":"x", "band":true, "offset":-1},
-          "y": {"scale":"y", "field":"data.$numeric$"},
-          "y2": {"scale":"y", "value":0}
-        },
-        "update": { "fill": {"value":"steelblue"} },
-        "hover": { "fill": {"value":"red"} }
-      }
-    }
-  ]
-}""".trim
 
   private[batch] final val CFGKEY_MAPPING = "column mapping"
 
@@ -125,6 +101,9 @@ object BatchVegaViewerNodeModel {
   private[batch] final val CFGKEY_TEMPLATE = "template"
   private[batch] final val DEFAULT_TEMPLATE: String = Templates.template.head._1
 
+  private[batch] final val CFGKEY_OPEN_VIEW = "openView"
+  private[batch] final val DEFAULT_OPEN_VIEW = false
+
   private[batch] final val VEGA_ERROR_PREFIX = "[Vega Err] "
 
   //Helper methods to create the [SettingsModel]s
@@ -140,6 +119,9 @@ object BatchVegaViewerNodeModel {
 
   protected[batch] def createTemplateSettings: SettingsModelString =
     new SettingsModelString(CFGKEY_TEMPLATE, DEFAULT_TEMPLATE)
+
+  protected[batch] def createOpenView: SettingsModelBoolean =
+    new SettingsModelBoolean(CFGKEY_OPEN_VIEW, DEFAULT_OPEN_VIEW)
 
   protected[batch] final val ROWKEY = "KNIMERowKey"
   protected[batch] final val COLOR = "KNIMEColor"
@@ -226,6 +208,7 @@ class BatchVegaViewerNodeModel extends NodeModel(Array[PortType](BufferedDataTab
   private[this] final val mapping = createMappingSettings
   private[this] final val imageFormat = createFormatSettings
   private[this] final val template = createTemplateSettings
+  private[this] final val openView = createOpenView
 
   /**
    * @inheritdoc
@@ -233,15 +216,54 @@ class BatchVegaViewerNodeModel extends NodeModel(Array[PortType](BufferedDataTab
   @throws[Exception]
   protected override def execute(inData: Array[PortObject],
     exec: ExecutionContext): Array[PortObject] = {
+    val tempDir = FileUtil.createTempDir("vegaData")
     val tempFile = inData match {
-      case Array(data: BufferedDataTable) => generateJSONTable(data, getInHiLiteHandler(0).getHiLitKeys)
+      case Array(data: BufferedDataTable) => generateJSONTable(data, getInHiLiteHandler(0).getHiLitKeys, new File(tempDir, "data.json"))
       case _ => None
     }
     val resultFile = try {
-      val specFile = FileUtil.createTempFile("spec", ".json", true)
+      val specFile = new File(tempDir, "spec.json")
       try {
         writeSpec(tempFile, specFile)
-        executeProcess(specFile)
+        import scala.concurrent.ExecutionContext.Implicits._
+        val future = Future {
+          if (openView.getBooleanValue) {
+            val viewSpec = new File(tempDir, "viewSpec.json")
+            BatchVegaViewerNodeModel.writeSpec(tempFile.map(x => "data.json"), viewSpec, vegaSpecification.getStringValue, mapping)
+            BatchVegaViewerNodeDataAwareDialog.writeHTML(tempDir, "viewSpec.json")
+            val server = new Server
+            val connector = new SelectChannelConnector
+            connector.setPort(9999)
+            server.addConnector(connector)
+
+            val contextHandler = new ContextHandler
+            contextHandler.setClassLoader(Thread.currentThread.getContextClassLoader)
+            contextHandler.setContextPath("/lib")
+            contextHandler.setHandler(new ResourceHandler)
+            val resourceHandler = new ResourceHandler
+            resourceHandler.setResourceBase(tempDir.toString)
+
+            val bundle = BatchVegaViewerNodePlugin.getDefault.getBundle
+
+            val commonUrl = new File(FileLocator.toFileURL(FileLocator.find(bundle, new Path("src/main/js"), null)).toURI) //bundle.getDataFile("src/main/js")
+            contextHandler.setResourceBase(commonUrl.toString())
+    val handlers = new org.mortbay.jetty.handler.HandlerList()
+    handlers.setHandlers(Array[org.mortbay.jetty.Handler](contextHandler, resourceHandler, new org.mortbay.jetty.handler.DefaultHandler()));
+    server.setHandler(handlers)
+    server.start
+            val browser = PlatformUI.getWorkbench.getBrowserSupport.createBrowser("VegaViewer")
+            browser.openURL(new java.net.URL("http://localhost:9999/show.html"))
+
+            Thread.sleep(10000)
+            connector.stop
+            connector.close
+            server.removeConnector(connector)
+            server.stop
+          }
+        }
+        val result = executeProcess(specFile)
+        Await.ready(future, Duration(11L, MINUTES))
+        result
       } finally {
         specFile.delete
       }
@@ -264,6 +286,7 @@ class BatchVegaViewerNodeModel extends NodeModel(Array[PortType](BufferedDataTab
       output.close
       resultFile.delete
     }
+    FileUtil.deleteRecursively(tempDir)
     Array[PortObject](new ImagePortObject(content, new ImagePortObjectSpec(dataType)))
   }
 
@@ -303,6 +326,7 @@ class BatchVegaViewerNodeModel extends NodeModel(Array[PortType](BufferedDataTab
     mapping.saveSettingsTo(settings)
     imageFormat.saveSettingsTo(settings)
     template.saveSettingsTo(settings)
+    openView.saveSettingsTo(settings)
 
   }
 
@@ -318,6 +342,11 @@ class BatchVegaViewerNodeModel extends NodeModel(Array[PortType](BufferedDataTab
       template.loadSettingsFrom(settings)
     } catch {
       case NonFatal(e) => template.setStringValue(DEFAULT_TEMPLATE)
+    }
+    try {
+      openView.loadSettingsFrom(settings)
+    } catch {
+      case NonFatal(e) => openView.setBooleanValue(false)
     }
   }
 
@@ -379,12 +408,13 @@ class BatchVegaViewerNodeModel extends NodeModel(Array[PortType](BufferedDataTab
   }
 
   @throws[IOException]
+//  @deprecated()
   private[this] def writeSpec(tempFile: Option[File], specFile: File): Unit = {
     val writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(specFile), "UTF-8"))
     try {
       val rawSpecText = vegaSpecification.getStringValue
       val pattern = Pattern.compile("$inputTable$", Pattern.LITERAL)
-      val specText = tempFile.fold(rawSpecText)(file => replacePairs(pattern.matcher(rawSpecText).replaceAll(file.toURI.toURL.toString.replaceFirst("file:/", "file://"))))
+      val specText = tempFile.fold(rawSpecText)(file => replacePairs(pattern.matcher(rawSpecText).replaceAll(fileReference(file))))
       writer.write(specText)
     } finally {
       writer.close
@@ -456,6 +486,10 @@ class BatchVegaViewerNodeModel extends NodeModel(Array[PortType](BufferedDataTab
         }
       }
     }
+  }
+
+  private[this] def fileReference(file: java.io.File): String = {
+    file.toURI.toURL.toString.replaceFirst("file:/", "file://")
   }
 }
 
