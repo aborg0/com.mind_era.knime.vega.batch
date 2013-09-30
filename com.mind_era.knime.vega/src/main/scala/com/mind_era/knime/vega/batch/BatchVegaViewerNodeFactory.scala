@@ -21,14 +21,15 @@ class BatchVegaViewerNodeFactory
   /**
    * @inheritdoc
    */
-  override def getNrNodeViews = 1
+  override def getNrNodeViews = 0
 
   /**
    * @inheritdoc
    */
   override def createNodeView(viewIndex: Int,
     nodeModel: BatchVegaViewerNodeModel): NodeView[BatchVegaViewerNodeModel] = {
-    new BatchVegaViewerNodeView(nodeModel)
+    throw new IndexOutOfBoundsException("No views: " + viewIndex)
+    //new BatchVegaViewerNodeView(nodeModel)
   }
 
   /**

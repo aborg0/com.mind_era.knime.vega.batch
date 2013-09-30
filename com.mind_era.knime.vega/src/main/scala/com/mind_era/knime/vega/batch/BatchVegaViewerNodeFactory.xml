@@ -51,6 +51,11 @@
         You can refer to the table in JSON fromat as $inputTable$.
       </p>
     </option>
+    <option name="Preview - http://localhost:9999/show.html">Opens the preview in the configured browser.
+    </option>
+    <option name="Update preview">Updates the preview with the specification, you
+      have to refresh the browser with preview to see the changes.
+    </option>
     <option name="Key-Replace">
       A table for mapping certain text (
       <tt>Key</tt>
@@ -64,6 +69,9 @@
     </option>
     <option name="Image format">The output format. (PNG, or SVG if it is
       available)
+    </option>
+    <option name="Advanced | Open view on execution">If checked, when executed the node will open the
+      browser with the figure.
     </option>
     <!-- possibly more options that can also be grouped by tabs -->
     <!-- <tab name="Standard Options"> <option name="short name of first 
@@ -80,8 +88,6 @@
     <outPort index="0" name="image">the generated image</outPort>
     <!-- possibly more output ports here -->
   </ports>
-  <views>
-    <view index="0" name="interactive view">An interactive view of the resulting data.
-    </view>
-  </views>
+  <!-- views> <view index="0" name="interactive view">An interactive view 
+    of the resulting data. </view> </views -->
 </knimeNode>

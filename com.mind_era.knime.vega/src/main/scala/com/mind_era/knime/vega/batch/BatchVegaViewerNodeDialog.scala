@@ -63,12 +63,13 @@ import org.knime.core.node.defaultnodesettings.DialogComponentBoolean
  *
  * @author Gabor Bakos
  */
+@deprecated("Please use BatchVegaViewerNodeDataAwareDialog instead as it can offer preview", "0.0.1")
 class BatchVegaViewerNodeDialog protected[batch] () extends DefaultNodeSettingsPane {
   private[this] var opening = true
   import BatchVegaViewerNodeModel._
   //TODO Check whether the MPS could be easily embedded here, maybe 3.0
   setHorizontalPlacement(true)
-  
+
   val templateModel = createTemplateSettings
   val templateSelector = new DialogComponentStringSelection(templateModel, "Template", Templates.template.map(_._1).asJavaCollection)
   addDialogComponent(templateSelector)
@@ -77,35 +78,34 @@ class BatchVegaViewerNodeDialog protected[batch] () extends DefaultNodeSettingsP
 
   //TODO add preferencepage to collect templates.
   val component = new DialogComponentSyntaxText(
-    createVegaSettings, Some("Vega specification")/*, Templates.template.map(p=>(p._1, p._2.text))*/)
+    createVegaSettings, Some("Vega specification") /*, Templates.template.map(p=>(p._1, p._2.text))*/ )
   addDialogComponent(component)
   component.textArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JAVASCRIPT)
   val ac = new AutoCompletion(createProvider(
-    parameterNames(templateModel)
-    ))
+    parameterNames(templateModel)))
   ac.install(component.textArea)
 
   val mappingPairs = new DialogComponentPairs(
     createMappingSettings, "Key", "Replace", EnumSet.of(Columns.Add, Columns.Remove, Columns.Enable)) {
     override def rightSuggestions(spec: Array[PortObjectSpec]) = {
-      val ret = new ArrayList(Seq(ROWKEY, COLOR, HILITED,  SIZE_FACTOR, SHAPE).map(new StringCell(_)).asJava)
+      val ret = new ArrayList(Seq(ROWKEY, COLOR, HILITED, SIZE_FACTOR, SHAPE).map(new StringCell(_)).asJava)
       ret.addAll(columnsFromSpec(spec, 0))
       ret
     }
     override def leftSuggestions(spec: Array[PortObjectSpec]) = {
       val arr = (new StringCell("$inputTable$") +: templateParameters.map(new StringCell(_))).toArray
-      Arrays.asList(arr:_*)
+      Arrays.asList(arr: _*)
     }
     override def hasSuggestions(spec: Array[PortObjectSpec], left: Boolean) = {
       true
     }
     private[this] var templateParameters: Seq[String] = Seq()
-    
+
     def updateSuggestions(parameters: Seq[String]) = {
       templateParameters = parameters
       checkConfigurabilityBeforeLoad(getLastTableSpecs)
     }
-    
+
     createNewTab("Advanced")
     addDialogComponent(new DialogComponentBoolean(createOpenView, "Open view on execution"))
   }
@@ -116,11 +116,11 @@ class BatchVegaViewerNodeDialog protected[batch] () extends DefaultNodeSettingsP
   templateSelector.getModel.addChangeListener(new ChangeListener() {
     def stateChanged(e: ChangeEvent): Unit = {
       val template = Templates.template.get(templateModel.getStringValue)
-      template.fold()(t=> 
+      template.fold()(t =>
         {
           val templateSelected = templateModel.getStringValue
           val selected = Templates.template.get(templateSelected)
-          val newText:String = selected.map(_.text).getOrElse(component.currentText)
+          val newText: String = selected.map(_.text).getOrElse(component.currentText)
           if (!opening && component.currentText != newText) {
             if (JOptionPane.showConfirmDialog(getPanel, s"Update text with template: ${templateSelected}?", "Apply template", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
               component.textArea.setText(newText)
@@ -136,7 +136,7 @@ class BatchVegaViewerNodeDialog protected[batch] () extends DefaultNodeSettingsP
   component.addTemlateChangeListener(new AbstractAction() {
     override def actionPerformed(e: ActionEvent): Unit = {
       val template = Templates.template.get(e.getSource().asInstanceOf[JComboBox[_]].getSelectedItem().asInstanceOf[String])
-      template.fold()(t=> mappingPairs.updateSuggestions(t.parameters.map(_.name)))
+      template.fold()(t => mappingPairs.updateSuggestions(t.parameters.map(_.name)))
     }
   })
   addDialogComponent(mappingPairs)
@@ -195,7 +195,9 @@ class BatchVegaViewerNodeDialog protected[batch] () extends DefaultNodeSettingsP
   }
 
   def parameterNames(templateModel: SettingsModelString): Seq[String] = {
-    for (template <-Templates.template.get(templateModel.getStringValue).toList;
-      parameter <- template.parameters) yield parameter.name
+    for (
+      template <- Templates.template.get(templateModel.getStringValue).toList;
+      parameter <- template.parameters
+    ) yield parameter.name
   }
 }
