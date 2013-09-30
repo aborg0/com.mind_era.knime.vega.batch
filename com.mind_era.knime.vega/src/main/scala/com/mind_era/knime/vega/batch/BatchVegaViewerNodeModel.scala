@@ -247,10 +247,10 @@ class BatchVegaViewerNodeModel extends NodeModel(Array[PortType](BufferedDataTab
 
             val commonUrl = new File(FileLocator.toFileURL(FileLocator.find(bundle, new Path("src/main/js"), null)).toURI) //bundle.getDataFile("src/main/js")
             contextHandler.setResourceBase(commonUrl.toString())
-    val handlers = new org.mortbay.jetty.handler.HandlerList()
-    handlers.setHandlers(Array[org.mortbay.jetty.Handler](contextHandler, resourceHandler, new org.mortbay.jetty.handler.DefaultHandler()));
-    server.setHandler(handlers)
-    server.start
+            val handlers = new org.mortbay.jetty.handler.HandlerList()
+            handlers.setHandlers(Array[org.mortbay.jetty.Handler](contextHandler, resourceHandler, new org.mortbay.jetty.handler.DefaultHandler()));
+            server.setHandler(handlers)
+            server.start
             val browser = PlatformUI.getWorkbench.getBrowserSupport.createBrowser("VegaViewer")
             browser.openURL(new java.net.URL("http://localhost:9999/show.html"))
 
@@ -407,8 +407,7 @@ class BatchVegaViewerNodeModel extends NodeModel(Array[PortType](BufferedDataTab
 
   }
 
-  @throws[IOException]
-//  @deprecated()
+  @throws[IOException] //  @deprecated()
   private[this] def writeSpec(tempFile: Option[File], specFile: File): Unit = {
     val writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(specFile), "UTF-8"))
     try {
