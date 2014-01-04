@@ -208,7 +208,7 @@ If the disclaimer of warranty and limitation of liability provided above cannot 
          unpack="false"/>
 
    <plugin
-         id="com.mind_era.knime.vega"
+         id="com.mind_era.knime.vega.batch"
          download-size="0"
          install-size="0"
          version="0.0.0"/>
