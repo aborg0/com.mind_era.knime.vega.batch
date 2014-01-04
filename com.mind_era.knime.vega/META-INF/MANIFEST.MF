@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: BatchVegaViewer-Node extension for KNIME Workbench
-Bundle-SymbolicName: com.mind_era.knime.vega.batch; singleton:=true
+Bundle-SymbolicName: com.mind_era.knime.vega; singleton:=true
 Bundle-Version: 0.0.1.qualifier
 Bundle-ClassPath: batchvegaviewer.jar
 Bundle-Activator: com.mind_era.knime.vega.batch.internal.BatchVegaViewerNodePlugin
