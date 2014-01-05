@@ -1,8 +1,8 @@
-[submodule "com.mind_era.knime.vega/src/main/js/vega"]
-	path = com.mind_era.knime.vega/src/main/js/vega
+[submodule "com.mind_era.knime.vega.batch/src/main/js/vega"]
+	path = com.mind_era.knime.vega.batch/src/main/js/vega
 	url = https://github.com/trifacta/vega.git
-[submodule "com.mind_era.knime.vega/src/main/js/d3"]
-	path = com.mind_era.knime.vega/src/main/js/d3
+[submodule "com.mind_era.knime.vega.batch/src/main/js/d3"]
+	path = com.mind_era.knime.vega.batch/src/main/js/d3
 	url = https://github.com/mbostock/d3.git
 [submodule "roles"]
 	path = roles
