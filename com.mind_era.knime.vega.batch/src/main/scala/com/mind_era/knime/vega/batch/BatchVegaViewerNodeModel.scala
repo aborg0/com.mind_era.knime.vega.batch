@@ -25,11 +25,11 @@ import org.knime.core.node.NodeSettingsRO
 import org.knime.core.node.NodeSettingsWO
 import org.knime.core.node.defaultnodesettings.SettingsModelIntegerBounded
 import _root_.scala.collection.JavaConverters._
-import org.codehaus.jackson.JsonFactory
+import com.fasterxml.jackson.core.JsonFactory
 import org.apache.commons.io.FileUtils
-import org.codehaus.jackson.JsonEncoding
+import com.fasterxml.jackson.core.JsonEncoding
 import org.knime.core.data.DoubleValue
-import org.codehaus.jackson.JsonGenerator
+import com.fasterxml.jackson.core.JsonGenerator
 import org.knime.core.data.DataType
 import org.knime.core.data.StringValue
 import org.knime.core.node.defaultnodesettings.SettingsModelString
